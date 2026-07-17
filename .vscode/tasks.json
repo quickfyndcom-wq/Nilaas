@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Prisma Migrate Deploy",
+			"type": "shell",
+			"command": "npx prisma migrate dev --name add-storeuser",
+			"args": [],
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}
