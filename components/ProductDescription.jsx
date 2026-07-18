@@ -586,7 +586,7 @@ const ProductDescription = ({
         title="Recommended for you"
         products={railProducts}
         loading={recommendLoading}
-        viewAllHref={product.category ? `/shop?category=${encodeURIComponent(product.category)}` : '/shop'}
+        viewAllHref={product.category ? `/category/${String(product.category).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}` : '/shop'}
       />
 
       {showReviewModal && (

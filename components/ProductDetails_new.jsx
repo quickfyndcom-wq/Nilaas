@@ -184,7 +184,7 @@ const ProductDetails = ({ product }) => {
           <div className="flex items-center gap-2 text-sm">
             <a href="/" className="text-gray-600 hover:text-gray-900">Home</a>
             <span className="text-gray-400">&gt;</span>
-            <a href={`/categories/${product.category}`} className="text-gray-600 hover:text-gray-900">{product.category}</a>
+            <a href={`/category/${product.category}`} className="text-gray-600 hover:text-gray-900">{product.category}</a>
           </div>
         </div>
       </div>

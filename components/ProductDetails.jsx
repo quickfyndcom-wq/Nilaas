@@ -402,7 +402,10 @@ const ProductDetails = ({ product, reviews = [] }) => {
             {product.category && (
               <>
                 <Link
-                  href={`/shop?category=${encodeURIComponent(product.category)}`}
+                  href={`/category/${String(product.category)
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/(^-|-$)/g, '')}`}
                   className="hover:text-[#2a1210] transition"
                 >
                   {product.category}

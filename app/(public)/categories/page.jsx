@@ -12,89 +12,71 @@ import Image3 from '../../../assets/collection/wedding-gifts.jpg'
 const featuredCategories = [
   {
     id: 1,
-    title: 'EARRINGS',
+    title: 'DRESSES',
     image: Image1,
-    link: '/shop?category=earrings',
-    description: 'Elegant earrings for every occasion'
+    link: '/category/dresses',
+    description: 'Casual, party and occasion dresses',
   },
   {
     id: 2,
-    title: 'FINGER RINGS',
+    title: 'KURTIS',
     image: Image2,
-    link: '/shop?category=rings',
-    description: 'Beautiful rings to adorn your fingers'
+    link: '/category/kurtis',
+    description: 'Daily and festive kurtis',
   },
   {
     id: 3,
-    title: 'PENDANTS',
+    title: 'ETHNIC WEAR',
     image: Image3,
-    link: '/shop?category=pendants',
-    description: 'Stunning pendants for a classic look'
+    link: '/category/ethnic-wear',
+    description: 'Kurtis, sarees and festive outfits',
   },
   {
     id: 4,
-    title: 'MANGALSUTRA',
+    title: 'WESTERN WEAR',
     image: Image1,
-    link: '/shop?category=mangalsutra',
-    description: 'Traditional mangalsutra designs'
+    link: '/category/western-wear',
+    description: 'Modern everyday and party styles',
   },
   {
     id: 5,
-    title: 'BRACELETS',
+    title: 'CO-ORDS',
     image: Image2,
-    link: '/shop?category=bracelets',
-    description: 'Stylish bracelets for your wrist'
+    link: '/category/co-ords-sets',
+    description: 'Matching sets for effortless styling',
   },
   {
     id: 6,
-    title: 'BANGLES',
+    title: 'LOUNGEWEAR',
     image: Image3,
-    link: '/shop?category=bangles',
-    description: 'Classic bangles in various designs'
+    link: '/category/loungewear',
+    description: 'Soft home and sleep styles',
   },
   {
     id: 7,
-    title: 'CHAINS',
+    title: 'FESTIVE',
     image: Image1,
-    link: '/shop?category=chains',
-    description: 'Elegant chains for everyday wear'
+    link: '/category/festive-wear',
+    description: 'Wedding, party and celebration wear',
   },
   {
     id: 8,
-    title: 'NECKLACES',
+    title: 'NEW ARRIVALS',
     image: Image2,
-    link: '/shop?category=necklaces',
-    description: 'Beautiful necklaces for special occasions'
+    link: '/category/new-arrivals',
+    description: 'Latest drops for women',
   },
-  {
-    id: 9,
-    title: 'NOSE PINS',
-    image: Image3,
-    link: '/shop?category=nose-pins',
-    description: 'Delicate nose pins and studs'
-  },
-  {
-    id: 10,
-    title: 'ANKLETS',
-    image: Image1,
-    link: '/shop?category=anklets',
-    description: 'Traditional and modern anklets'
-  },
-  {
-    id: 11,
-    title: 'COINS & BARS',
-    image: Image2,
-    link: '/shop?category=coins-bars',
-    description: 'Gold and silver coins and bars'
-  },
-  {
-    id: 12,
-    title: 'ACCESSORIES',
-    image: Image3,
-    link: '/shop?category=accessories',
-    description: 'Complete your look with accessories'
-  }
 ]
+
+function categoryPath(category) {
+  const slug =
+    category.slug ||
+    String(category.name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  return `/category/${slug}`
+}
 
 export default function CategoriesPage() {
     const [dbCategories, setDbCategories] = useState([])
@@ -127,7 +109,7 @@ export default function CategoriesPage() {
                         Shop by Categories
                     </h1>
                     <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-                        Explore our extensive collection of jewelry across all categories
+                        Explore dresses, kurtis, co-ords and ethnic wear across all categories
                     </p>
                 </div>
             </div>
@@ -145,7 +127,7 @@ export default function CategoriesPage() {
                             {dbCategories.filter(cat => !cat.parentId).map((category) => (
                                 <Link
                                     key={category.id}
-                                    href={`/shop?category=${encodeURIComponent(category.name)}`}
+                                    href={categoryPath(category)}
                                     className="group relative overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-500"
                                 >
                                     {/* Image */}

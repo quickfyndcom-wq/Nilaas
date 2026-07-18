@@ -28,7 +28,7 @@ const matchesCategorySlug = (product, normalizedSlug) => {
   )
 }
 
-export default function CategoryPage() {
+export default function CategoryProductsPage() {
   const params = useParams()
   const slug = Array.isArray(params?.slug) ? params.slug[0] : params?.slug || ''
   const normalizedSlug = decodeURIComponent(slug).toLowerCase()

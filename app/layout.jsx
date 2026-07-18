@@ -8,9 +8,9 @@ const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://nilaas.in"),
-  title: "Nilaas Jewellery – Where Elegance Meets Craftsmanship",
+  title: "Nilaas – Ethnic Fashion for Women",
   description:
-    "Nilaas Jewellery offers beautifully crafted designs made to shine forever. Find luxury jewellery pieces perfect for weddings, gifts, and everyday elegance.",
+    "Shop dresses, kurtis, co-ords and ethnic wear at Nilaas. Everyday Indian fashion for women — made for Kerala days and festive nights.",
   icons: {
     icon: { url: "/favicon.png", type: "image/png" },
     shortcut: "/favicon.png",

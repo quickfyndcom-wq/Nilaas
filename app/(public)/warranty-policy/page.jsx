@@ -12,7 +12,7 @@ export default function WarrantyPolicyPage() {
       <PolicyMeta />
       <Section title="Apparel quality">
         <p>
-          Nilaas fashion pieces are apparel, not electronics or jewellery with manufacturer warranties.
+          Nilaas fashion pieces are apparel — not electronics or hard goods with manufacturer warranties.
           We stand behind product quality at the time of delivery — manufacturing defects are covered
           under our Return Policy.
         </p>

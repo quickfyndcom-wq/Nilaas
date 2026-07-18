@@ -531,7 +531,7 @@ export default function StoreHeroBannersPage() {
                 onChange={handleInputChange}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                placeholder="Help India reduce gold imports by exchanging your old gold for new jewellery..."
+                placeholder="New arrivals edit — cotton dresses and kurtis for the season..."
               />
             </div>
 

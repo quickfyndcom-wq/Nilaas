@@ -66,9 +66,7 @@ function ProductsContent() {
     }
 
     const applyCategory = (label) => {
-        // Map friendly labels to actual category keys where needed
-        const category = label === 'Gold Jewellery' ? 'Gold' : label
-        toggleCategory(category)
+        toggleCategory(label)
     }
 
     // Filter and sort products
@@ -151,7 +149,7 @@ function ProductsContent() {
                 {/* Header with Results Count */}
                 <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <h1 className="text-3xl md:text-4xl font-serif text-gray-900">
-                        All Jewellery <span className="text-gray-500 text-xl">({filteredProducts.length} results)</span>
+                        All Products <span className="text-gray-500 text-xl">({filteredProducts.length} results)</span>
                     </h1>
                     {/* Search */}
                     <div className="flex items-center gap-2">
@@ -205,11 +203,18 @@ function ProductsContent() {
                         <span>Women</span>
                     </button>
                     <button
-                        onClick={() => applyCategory('Gold Jewellery')}
+                        onClick={() => applyCategory('Kurtis')}
                         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
                     >
                         <PlusIcon size={14} />
-                        <span>Gold Jewellery</span>
+                        <span>Kurtis</span>
+                    </button>
+                    <button
+                        onClick={() => applyCategory('Dresses')}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50"
+                    >
+                        <PlusIcon size={14} />
+                        <span>Dresses</span>
                     </button>
                     <button
                         onClick={() => setShowMoreCats(v => !v)}
@@ -388,13 +393,13 @@ function ProductsContent() {
                                     )}
                                 </div>
 
-                                {/* Jewellery Type / Categories */}
+                                {/* Categories */}
                                 <div className="border-b border-gray-200 pb-4">
                                     <button
                                         onClick={() => toggleGroup('categories')}
                                         className="w-full flex items-center justify-between py-2 text-gray-900 font-medium hover:text-orange-600"
                                     >
-                                        <span>Jewellery Type</span>
+                                        <span>Category</span>
                                         {expandedGroups.categories ? <ChevronUpIcon size={18} /> : <ChevronDownIcon size={18} />}
                                     </button>
                                     {expandedGroups.categories && (

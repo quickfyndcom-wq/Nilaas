@@ -55,7 +55,7 @@ const FindYourPieceModal = () => {
           <div className="flex flex-col items-center">
             <span className="bg-yellow-200 text-yellow-800 font-semibold px-3 py-1 rounded-full mb-3 text-xs">Find Your Perfect Piece</span>
             <h2 className="text-2xl font-bold text-center mb-2">What’s On Your Mind Today?</h2>
-            <p className="text-gray-500 text-center mb-4 text-sm">Jewellery tailored for your outfit, occasion & taste!</p>
+            <p className="text-gray-500 text-center mb-4 text-sm">Styles tailored for your outfit, occasion & taste!</p>
             <div className="grid grid-cols-2 gap-3 w-full mb-2">
               {CATEGORIES.map(cat => (
                 <button

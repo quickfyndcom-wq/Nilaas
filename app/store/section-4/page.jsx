@@ -207,7 +207,7 @@ export default function Section4Settings() {
                         type="text"
                         value={collection.title}
                         onChange={(e) => handleCollectionChange(index, 'title', e.target.value)}
-                        placeholder="e.g., Wedding, Diamond, Gold"
+                        placeholder="e.g., Festive, New Arrivals, Cotton Edit"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>

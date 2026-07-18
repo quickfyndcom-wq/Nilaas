@@ -4,13 +4,13 @@ import { useState, useEffect } from "react";
 export default function AppProductPage() {
   const [productId, setProductId] = useState("");
   const [metalDetails, setMetalDetails] = useState([
-    { label: "Karatage", value: "" },
-    { label: "Material Colour", value: "" },
-    { label: "Metal", value: "" },
+    { label: "Fabric", value: "" },
+    { label: "Colour", value: "" },
+    { label: "Fit", value: "" },
     { label: "Size", value: "" },
   ]);
   const [generalDetails, setGeneralDetails] = useState([
-    { label: "Jewellery Type", value: "" },
+    { label: "Product Type", value: "" },
     { label: "Brand", value: "" },
     { label: "Collection", value: "" },
     { label: "Gender", value: "" },

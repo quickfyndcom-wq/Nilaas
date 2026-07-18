@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { FiShoppingBag, FiUsers, FiFileText, FiInfo, FiTruck, FiStar, FiPackage, FiGrid, FiTag } from 'react-icons/fi';
 
 export const metadata = {
-  title: 'Sitemap - Nilaas Jewellery – Where Elegance Meets Craftsmanship',
-  description: 'Nilaas Jewellery offers beautifully crafted designs made to shine forever. Find luxury jewellery pieces perfect for weddings, gifts, and everyday elegance.',
+  title: 'Sitemap – Nilaas',
+  description: 'Browse all pages on Nilaas. Shop dresses, kurtis, co-ords and ethnic wear for women.',
 };
 
 export default function SitemapPage() {
@@ -12,7 +12,7 @@ export default function SitemapPage() {
       title: 'Shop',
       icon: FiShoppingBag,
       links: [
-        { text: 'All Jewellery', path: '/products' },
+        { text: 'All Products', path: '/products' },
         { text: 'Fast Delivery', path: '/fast-delivery' },
         { text: 'Top Selling', path: '/top-selling' },
         { text: 'New Arrivals', path: '/new' },

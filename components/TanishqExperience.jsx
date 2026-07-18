@@ -20,13 +20,13 @@ const DEFAULT_EXPERIENCES = [
     title: 'New arrivals',
     image:
       'https://images.unsplash.com/photo-1743229995753-69be4b438204?auto=format&fit=crop&w=1200&q=80',
-    link: '/shop?category=new-arrivals',
+    link: '/category/new-arrivals',
   },
   {
     title: 'Shop dresses',
     image:
       'https://images.unsplash.com/photo-1740992556357-f7fe9afff763?auto=format&fit=crop&w=1200&q=80',
-    link: '/shop?category=dresses',
+    link: '/category/dresses',
   },
   {
     title: 'WhatsApp us',

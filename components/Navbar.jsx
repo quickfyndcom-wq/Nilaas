@@ -866,7 +866,7 @@ const Navbar = () => {
                                       onMouseEnter={() => setHoveredCategory(category._id)}
                                     >
                                       <Link
-                                        href={`/shop?category=${categorySlug}`}
+                                        href={`/category/${categorySlug}`}
                                         className={`flex items-center justify-between px-4 py-3 hover:bg-[#faf7f4] transition ${
                                           hoveredCategory === category._id
                                             ? 'bg-[#faf7f4] text-[#2a1210]'
@@ -902,7 +902,7 @@ const Navbar = () => {
                                     return (
                                       <Link
                                         key={subcat._id}
-                                        href={`/shop?category=${subcatSlug}`}
+                                        href={`/category/${subcatSlug}`}
                                         className="block px-3 py-2 text-sm text-[#6e5048] hover:text-[#2a1210] hover:bg-[#faf7f4] transition"
                                         onClick={() => {
                                           setCategoriesDropdownOpen(false)

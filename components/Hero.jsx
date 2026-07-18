@@ -13,7 +13,7 @@ const FALLBACK_SLIDES = [
     title: 'Cotton kurtis & co-ords',
     subtitle: 'New season edit',
     cta: 'Shop new arrivals',
-    link: '/shop?category=new-arrivals',
+    link: '/category/new-arrivals',
     description: '',
     showTitle: true,
     showSubtitle: true,

@@ -6,25 +6,25 @@ import { SITE } from '@/lib/site'
 const LINKS = [
   {
     label: 'Dresses',
-    href: '/shop?category=dresses',
+    href: '/category/dresses',
     image:
       'https://images.unsplash.com/photo-1740992556357-f7fe9afff763?auto=format&fit=crop&w=900&q=80',
   },
   {
     label: 'Kurtis',
-    href: '/shop?category=kurtis',
+    href: '/category/kurtis',
     image:
       'https://images.unsplash.com/photo-1743229995753-69be4b438204?auto=format&fit=crop&w=900&q=80',
   },
   {
     label: 'Ethnic wear',
-    href: '/shop?category=ethnic-wear',
+    href: '/category/ethnic-wear',
     image:
       'https://images.unsplash.com/photo-1742800786544-e935375035e3?auto=format&fit=crop&w=900&q=80',
   },
   {
     label: 'New arrivals',
-    href: '/shop?category=new-arrivals',
+    href: '/category/new-arrivals',
     image:
       'https://images.unsplash.com/photo-1766994063823-ed214f883548?auto=format&fit=crop&w=900&q=80',
   },

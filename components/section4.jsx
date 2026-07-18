@@ -33,7 +33,7 @@ const GridSection = ({ section, router }) => {
       <div className="flex items-center justify-between mb-4 px-2">
         <h3 className="text-lg sm:text-2xl font-bold text-gray-900">{title || category}</h3>
         <button
-          onClick={() => router.push(`/shop?category=${category}`)}
+          onClick={() => router.push(`/category/${category}`)}
           className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm flex-shrink-0"
         >
           <ChevronRight size={18} strokeWidth={2.5} />

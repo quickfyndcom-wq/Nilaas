@@ -230,7 +230,7 @@ export default function BlogPage() {
             Latest Articles
           </h2>
           <p className="text-lg text-gray-600">
-            Expert insights, trends, and guides on jewelry and gold
+            Expert insights, trends, and style guides for women&apos;s fashion
           </p>
         </div>
 
