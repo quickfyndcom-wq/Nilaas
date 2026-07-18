@@ -421,6 +421,7 @@ export async function POST(request) {
                 },
             });
 
+            // Keep unpaid online orders out of "Order Placed" until payment succeeds
             await Order.updateMany(
                 { _id: { $in: orderIds } },
                 {
@@ -428,6 +429,7 @@ export async function POST(request) {
                         razorpayOrderId: rzOrder.id,
                         paymentStatus: 'pending',
                         isPaid: false,
+                        status: 'PAYMENT_PENDING',
                     },
                 }
             );
@@ -551,13 +553,8 @@ export async function GET(request) {
         const limit = parseInt(searchParams.get('limit') || '20', 10);
         const offset = parseInt(searchParams.get('offset') || '0', 10);
         
-        const orders = await Order.find({
-            userId,
-            $or: [
-                { paymentMethod: PaymentMethod.COD },
-                { paymentMethod: PaymentMethod.STRIPE, isPaid: true }
-            ]
-        })
+        // All orders for this signed-in customer (COD + Razorpay + Stripe)
+        const orders = await Order.find({ userId })
         .populate({
             path: 'orderItems.productId',
             model: 'Product'

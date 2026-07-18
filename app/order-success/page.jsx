@@ -8,6 +8,7 @@ import Image from 'next/image'
 import { Check, Copy, Package } from 'lucide-react'
 
 import { getPublicOrderNumber } from '@/lib/orderNumber'
+import { trackMeta } from '@/lib/metaPixel'
 
 function getItemName(item) {
   return (
@@ -118,9 +119,19 @@ function OrderSuccessContent() {
       : order?.paymentMethod || 'COD'
 
   useEffect(() => {
-    if (order && typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'Purchase', { value: total, currency: 'INR' })
-    }
+    if (!order) return
+    trackMeta('Purchase', {
+      value: total,
+      currency: 'INR',
+      content_ids: (order.orderItems || order.items || [])
+        .map((item) => String(item?.productId?._id || item?.productId || item?._id || ''))
+        .filter(Boolean),
+      content_type: 'product',
+      num_items: (order.orderItems || order.items || []).reduce(
+        (n, item) => n + (Number(item?.quantity) || 1),
+        0
+      ),
+    })
   }, [order, total])
 
   const copyOrderNo = async () => {

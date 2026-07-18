@@ -22,6 +22,8 @@ const OrderSchema = new mongoose.Schema({
   razorpayOrderId: { type: String, index: true },
   razorpayPaymentId: String,
   razorpaySignature: String,
+  paymentFailureReason: String,
+  paymentFailedAt: Date,
   isCouponUsed: { type: Boolean, default: false },
   coupon: Object,
   isGuest: { type: Boolean, default: false },

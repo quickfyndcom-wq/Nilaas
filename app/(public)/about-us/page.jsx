@@ -65,6 +65,14 @@ export default function AboutUsPage() {
         </p>
       </Section>
 
+      <Section title="Where to buy Nilaas">
+        <p>
+          Authentic Nilaas products are available only directly from Nilaas, through QuickFynd.com,
+          and through Nilaas-authorized listings on Amazon. Purchases made through other sellers or
+          marketplaces may not be eligible for Nilaas support.
+        </p>
+      </Section>
+
       <div className="grid sm:grid-cols-3 gap-4 pt-4">
         {[
           { href: '/shop', label: 'Shop collection' },

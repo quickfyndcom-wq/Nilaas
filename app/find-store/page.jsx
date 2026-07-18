@@ -104,7 +104,7 @@ export default function FindStorePage() {
             Visit our store in Kozhikode
           </h1>
           <p className="fs-rise fs-rise-3 text-sm sm:text-base text-[#c9a99a] max-w-md leading-relaxed mb-10">
-            Try on dresses and co-ords in person at our Kunnamangalam store — the same home base as QuickFynd.
+            Try on Nilaas dresses and co-ords in person at our Kunnamangalam store.
           </p>
           <div className="fs-rise fs-rise-4 flex flex-wrap gap-3">
             <a

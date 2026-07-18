@@ -1,6 +1,6 @@
 import authSeller from "@/middlewares/authSeller";
 import { NextResponse } from "next/server";
-import connectDB from '@/lib/mongodb';
+import connectDB from '@/lib/mongoose';
 import Order from '@/models/Order';
 import Product from '@/models/Product';
 import User from '@/models/User';
@@ -86,6 +86,25 @@ export async function GET(request){
             debugLog('Not authorized: no storeId');
             return NextResponse.json({ error: 'not authorized' }, { status: 401 })
         }
+
+        // Heal legacy bug: Razorpay orders were saved as ORDER_PLACED before payment
+        await Order.updateMany(
+            {
+                storeId,
+                paymentMethod: 'RAZORPAY',
+                isPaid: { $ne: true },
+                status: 'ORDER_PLACED',
+            },
+            {
+                $set: {
+                    status: 'PAYMENT_FAILED',
+                    paymentStatus: 'failed',
+                    isPaid: false,
+                    paymentFailureReason: 'Card/online payment was not completed',
+                    paymentFailedAt: new Date(),
+                },
+            }
+        );
 
         const orders = await Order.find({ storeId })
             .populate('addressId')

@@ -1,9 +1,7 @@
 import { Outfit } from "next/font/google";
 import "./globals.css";
-import Script from "next/script";
 import React from "react";
 import MetaPixel from "@/components/MetaPixel";
-import SocialProofPopup from "@/components/SocialProofPopup";
 import ClientLayout from "./ClientLayout";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
@@ -54,27 +52,8 @@ export default function RootLayout({ children }) {
         <link rel="preload" href="/api/store/section4" as="fetch" crossOrigin="anonymous" />
       </head>
       <body className={`${outfit.className} antialiased bg-white`} suppressHydrationWarning>
-        {/* Google Tag Manager (noscript must be immediately after <body>) */}
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-5QLZ2255"
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
-        {/* Google Tag Manager - load after interactive */}
-        <Script id="gtm" strategy="afterInteractive">
-          {`
-            (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-            })(window,document,'script','dataLayer','GTM-5QLZ2255');
-          `}
-        </Script>
+        {/* Only Meta Pixel 1070471465441932 — no GTM / other trackers */}
         <MetaPixel />
-        {/* Add Navbar and Footer globally via ClientLayout */}
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

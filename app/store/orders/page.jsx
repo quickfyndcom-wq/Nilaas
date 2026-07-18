@@ -14,7 +14,7 @@ import { getPublicOrderNumber, ORDER_STATUSES } from "@/lib/orderNumber"
 // Update order status (+ customer email for every status)
 const updateOrderStatus = async (orderId, newStatus, getToken, fetchOrders) => {
     try {
-        const token = await getToken(true); // Force refresh token
+            const token = await getToken(); // Force refresh token
         if (!token) {
             toast.error('Authentication failed. Please sign in again.');
             return;
@@ -41,6 +41,8 @@ const updateOrderStatus = async (orderId, newStatus, getToken, fetchOrders) => {
 };
 
 const STATUS_BADGE = {
+    PAYMENT_PENDING: 'bg-amber-100 text-amber-900',
+    PAYMENT_FAILED: 'bg-red-100 text-red-800',
     ORDER_PLACED: 'bg-slate-100 text-slate-700',
     CONFIRMED: 'bg-sky-100 text-sky-800',
     PROCESSING: 'bg-amber-100 text-amber-800',
@@ -59,6 +61,27 @@ const STATUS_BADGE = {
     RTO: 'bg-rose-100 text-rose-800',
     CANCELLED: 'bg-red-100 text-red-800',
 };
+
+function getPaymentDisplay(order) {
+    const method = String(order?.paymentMethod || '').toUpperCase() || '—';
+    const status = String(order?.paymentStatus || '').toLowerCase();
+    const orderStatus = String(order?.status || '').toUpperCase();
+
+    if (method === 'COD') {
+        return { method, label: null, className: 'text-slate-600' };
+    }
+
+    if (order?.isPaid || status === 'paid') {
+        return { method, label: 'Paid', className: 'text-emerald-700' };
+    }
+    if (status === 'failed' || orderStatus === 'PAYMENT_FAILED') {
+        return { method, label: 'Failed', className: 'text-red-700' };
+    }
+    if (orderStatus === 'PAYMENT_PENDING' || status === 'pending' || method === 'RAZORPAY' || method === 'STRIPE') {
+        return { method, label: 'Pending', className: 'text-amber-700' };
+    }
+    return { method, label: null, className: 'text-slate-600' };
+}
 
 // Add updateTrackingDetails function
 // (must be inside the component, not top-level)
@@ -263,6 +286,15 @@ export default function StoreOrders() {
         if (!selectedOrder) return;
         if (hasDelhiveryAwb(selectedOrder)) {
             toast.error('Delhivery AWB already exists for this order');
+            return;
+        }
+        const payMethod = String(selectedOrder.paymentMethod || '').toUpperCase();
+        if (payMethod === 'RAZORPAY' && !selectedOrder.isPaid) {
+            toast.error('Cannot ship — Razorpay payment is not completed');
+            return;
+        }
+        if (['PAYMENT_PENDING', 'PAYMENT_FAILED'].includes(String(selectedOrder.status || '').toUpperCase())) {
+            toast.error('Cannot ship — payment is still pending or failed');
             return;
         }
         if (!selectedOrder.shippingAddress?.street && !selectedOrder.shippingAddress?.address) {
@@ -846,7 +878,21 @@ export default function StoreOrders() {
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 font-medium text-slate-800">{currency}{order.total}</td>
-                                    <td className="px-4 py-3">{order.paymentMethod}</td>
+                                    <td className="px-4 py-3">
+                                        {(() => {
+                                            const pay = getPaymentDisplay(order);
+                                            return (
+                                                <div className="leading-tight">
+                                                    <div className="font-medium text-slate-800">{pay.method}</div>
+                                                    {pay.label && (
+                                                        <div className={`text-[11px] font-semibold uppercase tracking-wide ${pay.className}`}>
+                                                            {pay.label}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
+                                    </td>
                                     <td className="px-4 py-3" onClick={e => { e.stopPropagation(); }}>
                                         <select
                                             value={order.status || 'ORDER_PLACED'}
@@ -1313,7 +1359,22 @@ export default function StoreOrders() {
                                     </div>
                                     <div>
                                         <p className="text-slate-500">Payment Status</p>
-                                        <p className="font-medium text-slate-900">{selectedOrder.isPaid ? "✓ Paid" : "Pending"}</p>
+                                        {(() => {
+                                            const pay = getPaymentDisplay(selectedOrder);
+                                            const label =
+                                                pay.label ||
+                                                (String(selectedOrder.paymentMethod || '').toUpperCase() === 'COD'
+                                                    ? 'Collect on delivery'
+                                                    : '—');
+                                            return (
+                                                <p className={`font-medium ${pay.className}`}>
+                                                    {label}
+                                                    {selectedOrder.paymentFailureReason
+                                                        ? ` — ${selectedOrder.paymentFailureReason}`
+                                                        : ''}
+                                                </p>
+                                            );
+                                        })()}
                                     </div>
                                     {selectedOrder.isCouponUsed && (
                                         <div>

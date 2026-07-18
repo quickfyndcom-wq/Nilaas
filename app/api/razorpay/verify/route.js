@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
-import connectDB from '@/lib/mongodb'
+import connectDB from '@/lib/mongoose'
 import Order from '@/models/Order'
 import User from '@/models/User'
 import { sendOrderConfirmationEmail } from '@/lib/email'
@@ -52,9 +52,16 @@ export async function POST(request) {
       order.paymentStatus = 'paid'
       order.razorpayPaymentId = razorpay_payment_id
       order.razorpaySignature = razorpay_signature
-      if (order.status === 'ORDER_PLACED' || !order.status) {
+      // Only promote to Order Placed after successful payment
+      if (
+        !order.status ||
+        order.status === 'ORDER_PLACED' ||
+        order.status === 'PAYMENT_PENDING' ||
+        order.status === 'PAYMENT_FAILED'
+      ) {
         order.status = 'ORDER_PLACED'
       }
+      order.paymentFailureReason = undefined
       await order.save()
 
       try {

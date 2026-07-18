@@ -22,7 +22,7 @@ const StoreLayout = ({ children }) => {
     const fetchIsSeller = async () => {
         if (!user) return;
         try {
-            const token = await getToken(true); // Force refresh token
+            const token = await getToken();
             if (!token) {
                 console.log('[StoreLayout] No token available');
                 setSellerLoading(false);

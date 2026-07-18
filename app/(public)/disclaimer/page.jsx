@@ -25,6 +25,15 @@ export default function DisclaimerPage() {
         </p>
       </Section>
 
+      <Section title="Official sales channels">
+        <p>
+          Authentic Nilaas products are sold only directly by Nilaas, through QuickFynd.com, and
+          through Nilaas-authorized listings on Amazon. Products offered through any other website,
+          marketplace, social-media seller, or third party are not authorized by Nilaas, and we
+          cannot guarantee their authenticity or provide after-sales support for them.
+        </p>
+      </Section>
+
       <Section title="External links">
         <p>
           Our site may link to courier tracking or payment partners. We are not responsible for the

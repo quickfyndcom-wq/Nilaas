@@ -1,15 +1,14 @@
 'use client'
-import dynamic from 'next/dynamic';
 
-const OrdersClient = dynamic(() => import('./OrdersClient'), {
-  ssr: false,
-  loading: () => (
-    <div className="min-h-[70vh] flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-    </div>
-  )
-});
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Loading from '@/components/Loading'
 
-export default function OrdersPage() {
-  return <OrdersClient />;
+/** My Orders lives in the customer dashboard */
+export default function OrdersRedirectPage() {
+  const router = useRouter()
+  useEffect(() => {
+    router.replace('/dashboard/orders')
+  }, [router])
+  return <Loading />
 }

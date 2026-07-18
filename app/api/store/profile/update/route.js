@@ -15,9 +15,16 @@ export async function POST(request) {
     await dbConnect();
     const { name, image, email } = await request.json();
     await User.findOneAndUpdate(
-      { firebaseUid: userId },
-      { name, image, email },
-      { upsert: true }
+      { _id: userId },
+      {
+        $set: {
+          ...(name != null ? { name } : {}),
+          ...(image != null ? { image } : {}),
+          ...(email != null ? { email } : {}),
+        },
+        $setOnInsert: { _id: userId },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
     return NextResponse.json({ message: 'Profile updated' });
   } catch (error) {

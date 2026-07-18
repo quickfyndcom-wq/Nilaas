@@ -556,7 +556,7 @@ const Navbar = () => {
     const checkSeller = async () => {
       setIsSellerLoading(true);
       try {
-        const token = await firebaseUser.getIdToken(true);
+        const token = await firebaseUser.getIdToken();
         const { data } = await axios.get('/api/store/is-seller', {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -726,7 +726,7 @@ const Navbar = () => {
                         Profile
                       </Link>
                       <Link
-                        href="/orders"
+                        href="/dashboard/orders"
                         className="block px-4 py-2.5 text-[#2a1210] hover:bg-[#faf7f4] text-sm"
                         onClick={() => setUserDropdownOpen(false)}
                       >
@@ -1094,7 +1094,7 @@ const Navbar = () => {
                   <span className="bg-[#2a1210] text-white text-xs px-2 py-0.5">{wishlistCount}</span>
                 )}
               </Link>
-              <Link href="/orders" className="px-4 py-3 text-[#2a1210] font-medium hover:bg-[#faf7f4]" onClick={() => setMobileMenuOpen(false)}>
+              <Link href="/dashboard/orders" className="px-4 py-3 text-[#2a1210] font-medium hover:bg-[#faf7f4]" onClick={() => setMobileMenuOpen(false)}>
                 My Orders
               </Link>
               <Link href="/about-us" className="px-4 py-3 text-[#2a1210] font-medium hover:bg-[#faf7f4]" onClick={() => setMobileMenuOpen(false)}>

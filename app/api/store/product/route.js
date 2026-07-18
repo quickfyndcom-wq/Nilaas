@@ -1,6 +1,6 @@
 
 "use server";
-import { uploadFileToS3 } from "@/configs/s3";
+import { uploadFileToS3, uploadToS3 } from "@/configs/s3";
 import connectDB from '@/lib/mongodb';
 import Product from '@/models/Product';
 import authSeller from "@/middlewares/authSeller";
@@ -15,6 +15,59 @@ const uploadImages = async (images) => {
             return url;
         })
     );
+};
+
+const QUICKFYND_IMAGE_HOSTS = new Set([
+    'quickfynd.com',
+    'www.quickfynd.com',
+    'ik.imagekit.io',
+]);
+
+// Copy imported QuickFynd assets into Nilaas S3 when the product is saved.
+const mirrorImportedImage = async (imageUrl) => {
+    if (typeof imageUrl !== 'string' || !imageUrl.trim()) return imageUrl;
+
+    let url;
+    try {
+        url = new URL(imageUrl);
+    } catch {
+        return imageUrl;
+    }
+
+    if (url.protocol !== 'https:' || !QUICKFYND_IMAGE_HOSTS.has(url.hostname.toLowerCase())) {
+        return imageUrl;
+    }
+
+    const response = await fetch(url, {
+        redirect: 'error',
+        signal: AbortSignal.timeout(20000),
+        headers: { Accept: 'image/*', 'User-Agent': 'Nilaas-Product-Importer/1.0' },
+    });
+    if (!response.ok) throw new Error(`Unable to copy imported image (HTTP ${response.status})`);
+
+    const contentType = String(response.headers.get('content-type') || '').split(';')[0];
+    if (!contentType.startsWith('image/')) {
+        throw new Error('Imported product image is not a valid image');
+    }
+
+    const contentLength = Number(response.headers.get('content-length') || 0);
+    if (contentLength > 10 * 1024 * 1024) {
+        throw new Error('Imported product image is larger than 10 MB');
+    }
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (buffer.length > 10 * 1024 * 1024) {
+        throw new Error('Imported product image is larger than 10 MB');
+    }
+
+    const sourceName = decodeURIComponent(url.pathname.split('/').pop() || 'quickfynd-product.jpg');
+    const uploaded = await uploadToS3({
+        buffer,
+        fileName: sourceName,
+        folder: 'products/imported',
+        contentType,
+    });
+    return uploaded.url;
 };
 
 // POST: Create a new product
@@ -186,11 +239,31 @@ export async function POST(request) {
         let imagesUrl = [];
         const filesToUpload = images.filter(img => typeof img !== 'string');
         const urls = images.filter(img => typeof img === 'string');
+        const mirroredUrls = await Promise.all(urls.map(mirrorImportedImage));
+        const mirroredUrlMap = new Map(urls.map((url, index) => [url, mirroredUrls[index]]));
         if (filesToUpload.length > 0) {
             const uploaded = await uploadImages(filesToUpload);
-            imagesUrl = [...urls, ...uploaded];
+            imagesUrl = [...mirroredUrls, ...uploaded];
         } else {
-            imagesUrl = urls;
+            imagesUrl = mirroredUrls;
+        }
+
+        if (hasVariants && variants.length > 0) {
+            variants = await Promise.all(
+                variants.map(async (variant) => {
+                    const sourceImage = variant?.image || variant?.options?.image || '';
+                    if (!sourceImage) return variant;
+                    const mirroredImage =
+                        mirroredUrlMap.get(sourceImage) || await mirrorImportedImage(sourceImage);
+                    return {
+                        ...variant,
+                        image: mirroredImage,
+                        options: variant.options
+                            ? { ...variant.options, image: mirroredImage }
+                            : variant.options,
+                    };
+                })
+            );
         }
 
         // Parse attributes optionally

@@ -14,6 +14,7 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { openRazorpayCheckout } from "@/lib/razorpay-client";
+import { trackMeta } from "@/lib/metaPixel";
 
 const inputClass =
   "w-full border border-[#2a1210]/15 bg-white px-4 py-2.5 text-sm text-[#2a1210] placeholder:text-[#9a7d72] focus:outline-none focus:border-[#2a1210] transition";
@@ -81,6 +82,25 @@ export default function CheckoutPage() {
       dispatch(fetchProducts({}));
     }
   }, [dispatch, products]);
+
+  // Meta Pixel — InitiateCheckout
+  useEffect(() => {
+    if (!cartHydrated) return;
+    const ids = Object.keys(cartItems || {});
+    if (!ids.length) return;
+    const value = ids.reduce((sum, id) => {
+      const product = products?.find((p) => String(p._id) === String(id));
+      const qty = Number(cartItems[id]) || 0;
+      return sum + (Number(product?.price) || 0) * qty;
+    }, 0);
+    trackMeta("InitiateCheckout", {
+      content_ids: ids,
+      content_type: "product",
+      value,
+      currency: "INR",
+      num_items: Object.values(cartItems).reduce((n, q) => n + (Number(q) || 0), 0),
+    });
+  }, [cartHydrated]); // fire once when cart is ready
 
   // Fetch addresses for logged-in users
   useEffect(() => {
@@ -274,6 +294,24 @@ export default function CheckoutPage() {
 
       // Online payment via Razorpay Checkout
       if (data.razorpay?.orderId) {
+        const pendingOrderIds = data.orderIds || (data.id ? [data.id] : [])
+        const markPaymentFailed = async (reason) => {
+          if (!pendingOrderIds.length) return
+          try {
+            await fetch('/api/razorpay/fail', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderIds: pendingOrderIds,
+                razorpayOrderId: data.razorpay.orderId,
+                reason,
+              }),
+            })
+          } catch (markErr) {
+            console.warn('Could not mark Razorpay order failed:', markErr)
+          }
+        }
+
         try {
           await openRazorpayCheckout({
             key: data.razorpay.key,
@@ -283,6 +321,12 @@ export default function CheckoutPage() {
             name: 'Nilaas',
             description: 'Order payment',
             prefill: data.razorpay.prefill || {},
+            onDismiss: async () => {
+              await markPaymentFailed('Payment cancelled by customer')
+            },
+            onFailed: async (err) => {
+              await markPaymentFailed(err?.message || 'Card payment failed')
+            },
             onSuccess: async (payment) => {
               const verifyRes = await fetch('/api/razorpay/verify', {
                 method: 'POST',
@@ -291,11 +335,12 @@ export default function CheckoutPage() {
                   razorpay_order_id: payment.razorpay_order_id,
                   razorpay_payment_id: payment.razorpay_payment_id,
                   razorpay_signature: payment.razorpay_signature,
-                  orderIds: data.orderIds || [data.id],
+                  orderIds: pendingOrderIds,
                 }),
               })
               const verifyData = await verifyRes.json()
               if (!verifyRes.ok) {
+                await markPaymentFailed(verifyData.error || 'Payment verification failed')
                 throw new Error(verifyData.error || 'Payment verification failed')
               }
               const paidOrderId = verifyData.id || data.id

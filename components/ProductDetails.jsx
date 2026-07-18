@@ -23,6 +23,7 @@ import { addToCart, uploadCart } from '@/lib/features/cart/cartSlice'
 import MobileProductActions from './MobileProductActions'
 import { useAuth } from '@/lib/useAuth'
 import { colorToSwatch, isLightSwatch } from '@/lib/fashion-colors'
+import { trackMeta } from '@/lib/metaPixel'
 
 function formatMoney(val) {
   const num = Number(val)
@@ -79,6 +80,18 @@ const ProductDetails = ({ product, reviews = [] }) => {
         setFetchedReviews(data.reviews || [])
       } catch {}
     })()
+  }, [product._id])
+
+  // Meta Pixel — ViewContent when product page is viewed
+  useEffect(() => {
+    if (!product?._id) return
+    trackMeta('ViewContent', {
+      content_ids: [String(product._id)],
+      content_name: product.name || product.title || '',
+      content_type: 'product',
+      value: Number(product.price) || 0,
+      currency: 'INR',
+    })
   }, [product._id])
 
   const reviewsToUse = fetchedReviews.length > 0 ? fetchedReviews : reviews
@@ -341,6 +354,14 @@ const ProductDetails = ({ product, reviews = [] }) => {
       return
     }
     for (let i = 0; i < quantity; i++) dispatch(addToCart({ productId: product._id }))
+    trackMeta('AddToCart', {
+      content_ids: [String(product._id)],
+      content_name: product.name || product.title || '',
+      content_type: 'product',
+      value: (Number(product.price) || 0) * quantity,
+      currency: 'INR',
+      contents: [{ id: String(product._id), quantity }],
+    })
     if (isSignedIn) {
       try {
         await dispatch(uploadCart()).unwrap()

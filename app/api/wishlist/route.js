@@ -12,15 +12,12 @@ export async function GET(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
         const idToken = authHeader.split('Bearer ')[1];
-        // Import admin SDK dynamically to avoid SSR issues
-        const { getAuth } = await import('firebase-admin/auth');
-        const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-        if (getApps().length === 0) {
-            initializeApp({ credential: applicationDefault() });
-        }
+        // Prefer shared Firebase Admin init (service account), not applicationDefault()
+        const { getAuth, auth: adminAuth } = await import('@/lib/firebase-admin');
+        const auth = adminAuth || getAuth();
         let decodedToken;
         try {
-            decodedToken = await getAuth().verifyIdToken(idToken);
+            decodedToken = await auth.verifyIdToken(idToken);
         } catch (e) {
             return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
         }
@@ -60,14 +57,11 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
         const idToken = authHeader.split('Bearer ')[1];
-        const { getAuth } = await import('firebase-admin/auth');
-        const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
-        if (getApps().length === 0) {
-            initializeApp({ credential: applicationDefault() });
-        }
+        const { getAuth, auth: adminAuth } = await import('@/lib/firebase-admin');
+        const auth = adminAuth || getAuth();
         let decodedToken;
         try {
-            decodedToken = await getAuth().verifyIdToken(idToken);
+            decodedToken = await auth.verifyIdToken(idToken);
         } catch (e) {
             return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
         }

@@ -148,6 +148,8 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
     const [aiNotes, setAiNotes] = useState('')
     const [aiIncludeVariants, setAiIncludeVariants] = useState(true)
     const [aiLoading, setAiLoading] = useState(false)
+    const [quickFyndUrl, setQuickFyndUrl] = useState('')
+    const [quickFyndImporting, setQuickFyndImporting] = useState(false)
 
     // Fetch live metal prices
     const fetchLiveMetalPrice = async (metalType, karat) => {
@@ -459,6 +461,130 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
             toast.error(err?.response?.data?.error || err.message || 'AI autofill failed')
         } finally {
             setAiLoading(false)
+        }
+    }
+
+    const importFromQuickFynd = async () => {
+        const rawUrl = quickFyndUrl.trim()
+        if (!rawUrl) {
+            toast.error('Paste a QuickFynd product URL')
+            return
+        }
+
+        try {
+            const parsed = new URL(rawUrl)
+            if (
+                parsed.protocol !== 'https:' ||
+                !['quickfynd.com', 'www.quickfynd.com'].includes(parsed.hostname.toLowerCase()) ||
+                !/^\/product\/[^/]+\/?$/i.test(parsed.pathname)
+            ) {
+                toast.error('Only quickfynd.com/product/... URLs are allowed')
+                return
+            }
+        } catch {
+            toast.error('Enter a valid QuickFynd product URL')
+            return
+        }
+
+        try {
+            setQuickFyndImporting(true)
+            const token = await getToken(true)
+            if (!token) throw new Error('Please sign in again')
+
+            const { data } = await axios.post(
+                '/api/store/import-quickfynd',
+                { url: rawUrl },
+                { headers: { Authorization: `Bearer ${token}` } }
+            )
+            if (!data?.success || !data.product) {
+                throw new Error(data?.error || 'QuickFynd import failed')
+            }
+
+            const p = data.product
+            setProductInfo((prev) => ({
+                ...prev,
+                name: p.name || prev.name,
+                slug: p.slug || prev.slug,
+                brand: p.brand || prev.brand || 'Nilaas',
+                shortDescription: p.shortDescription || prev.shortDescription,
+                description: p.description || prev.description,
+                price: p.price || '',
+                AED: p.mrp || p.price || '',
+                category: p.category || prev.category,
+                categories: p.category ? [p.category] : prev.categories,
+                sku: p.sku || prev.sku,
+                stockQuantity:
+                    p.stockQuantity !== undefined ? p.stockQuantity : prev.stockQuantity,
+                colors: Array.isArray(p.colors) ? p.colors : prev.colors,
+                sizes: Array.isArray(p.sizes) ? p.sizes : prev.sizes,
+                tags: Array.isArray(p.tags) ? p.tags : prev.tags,
+                badges: Array.isArray(p.badges) ? p.badges : prev.badges,
+                fastDelivery: p.fastDelivery === true,
+                allowReturn: p.allowReturn !== false,
+                allowReplacement: p.allowReplacement !== false,
+            }))
+
+            const importedImages = Array.isArray(p.images) ? p.images.slice(0, 8) : []
+            if (importedImages.length) {
+                setImages(
+                    Object.fromEntries(
+                        Array.from({ length: 8 }, (_, index) => [
+                            String(index + 1),
+                            importedImages[index] || null,
+                        ])
+                    )
+                )
+            }
+
+            if (p.description && editor) {
+                editor.commands.setContent(p.description, false)
+                setProductInfo((prev) => ({ ...prev, description: editor.getHTML() }))
+            }
+
+            if (Array.isArray(p.generalDetails)) {
+                setGeneralDetails(p.generalDetails)
+            }
+
+            if (Array.isArray(p.variants) && p.variants.length) {
+                setHasVariants(true)
+                setBulkEnabled(false)
+                setVariants(
+                    p.variants.map((variant) => ({
+                        options: {
+                            color: variant.color || '',
+                            size: variant.size || '',
+                            title:
+                                variant.title ||
+                                [variant.color, variant.size].filter(Boolean).join(' / '),
+                        },
+                        sku: variant.sku || '',
+                        stock: Number(variant.stock) || 0,
+                        price: Number(variant.price) || '',
+                        AED: Number(variant.mrp || variant.price) || '',
+                        image: variant.image || '',
+                        imagePreview: variant.image || '',
+                    }))
+                )
+            } else {
+                setHasVariants(false)
+                setVariants([])
+            }
+
+            if (!p.category && Array.isArray(p.sourceCategories) && p.sourceCategories.length) {
+                toast(`Select a local category for: ${p.sourceCategories.join(', ')}`, {
+                    icon: 'ℹ️',
+                })
+            }
+            toast.success('QuickFynd product imported — review and save it')
+        } catch (error) {
+            console.error(error)
+            toast.error(
+                error?.response?.data?.error ||
+                error?.message ||
+                'QuickFynd product import failed'
+            )
+        } finally {
+            setQuickFyndImporting(false)
         }
     }
 
@@ -952,6 +1078,45 @@ export default function ProductForm({ product = null, onClose, onSubmitSuccess }
                             ✕
                         </button>
                     </div>
+
+                    {/* QuickFynd URL Import */}
+                    {!product && (
+                        <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-md">
+                            <div className="mb-4">
+                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-700">
+                                    QuickFynd import
+                                </p>
+                                <h2 className="text-xl font-bold text-slate-900">
+                                    Import product from URL
+                                </h2>
+                                <p className="mt-1 text-sm text-slate-600">
+                                    Paste one QuickFynd product link. Images, description, price, stock,
+                                    specifications and variants will fill this form for your review.
+                                    Nothing is saved until you click <strong>Add product</strong>.
+                                </p>
+                            </div>
+                            <div className="flex flex-col gap-3 sm:flex-row">
+                                <input
+                                    type="url"
+                                    value={quickFyndUrl}
+                                    onChange={(e) => setQuickFyndUrl(e.target.value)}
+                                    placeholder="https://www.quickfynd.com/product/product-name"
+                                    className="min-w-0 flex-1 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={importFromQuickFynd}
+                                    disabled={quickFyndImporting}
+                                    className="shrink-0 rounded-xl bg-indigo-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {quickFyndImporting ? 'Importing…' : 'Import product'}
+                                </button>
+                            </div>
+                            <p className="mt-2 text-xs text-slate-500">
+                                For security, only URLs from quickfynd.com/product/ are accepted.
+                            </p>
+                        </div>
+                    )}
 
                     {/* AI Autofill */}
                     <div className="rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 to-white p-6 shadow-md">

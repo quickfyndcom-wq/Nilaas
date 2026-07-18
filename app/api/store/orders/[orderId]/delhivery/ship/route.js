@@ -54,6 +54,22 @@ export async function POST(request, { params }) {
       )
     }
 
+    const payMethod = String(order.paymentMethod || '').toUpperCase()
+    const unpaidOnline =
+      (payMethod === 'RAZORPAY' || payMethod === 'STRIPE') && !order.isPaid
+    const paymentBlocked = ['PAYMENT_PENDING', 'PAYMENT_FAILED'].includes(
+      String(order.status || '').toUpperCase()
+    )
+    if (unpaidOnline || paymentBlocked) {
+      return NextResponse.json(
+        {
+          error:
+            'Cannot create Delhivery shipment — online payment is unpaid or failed. Wait for successful payment first.',
+        },
+        { status: 400 }
+      )
+    }
+
     if (!order.shippingAddress?.street && !order.shippingAddress?.address) {
       return NextResponse.json(
         { error: 'Order has no shipping address — cannot ship with Delhivery' },
