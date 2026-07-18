@@ -1,205 +1,221 @@
 'use client'
 
-import { MapPin, Phone, Clock, Navigation } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { MapPin, Clock, Navigation, ArrowUpRight } from 'lucide-react'
+import { SITE } from '@/lib/site'
+
+const STORE = {
+  name: SITE.name,
+  city: 'Kozhikode, Kerala',
+  address: SITE.address,
+  hours: SITE.hours,
+  lat: 11.3057105,
+  lng: 75.8790061,
+  mapEmbed:
+    'https://maps.google.com/maps?q=Kunnamangalam+Police+Station,+MLA+Road,+Ambalamukku,+Kunnamangalam,+Kozhikode,+Kerala+673571&z=16&output=embed',
+  mapLink:
+    'https://www.google.com/maps/dir/?api=1&destination=Nilaas,+MLA+Road+near+Police+Station,+Ambalamukku,+Kunnamangalam,+Kozhikode,+Kerala+673571',
+  heroImage: '/find-store-fashion-hero.png',
+}
 
 export default function FindStorePage() {
-  const storeInfo = {
-    name: "NILAAS",
-    tagline: "Jewelry Store",
-    address: "HIND Plaza - Gold Souq - Al Ras - Dubai",
-    plusCode: "77CW+HJ Dubai",
-    phone: "+971 XX XXX XXXX",
-    hours: {
-      monday: "9:00 AM - 10:00 PM",
-      tuesday: "9:00 AM - 10:00 PM",
-      wednesday: "9:00 AM - 10:00 PM",
-      thursday: "9:00 AM - 10:00 PM",
-      friday: "2:00 PM - 10:00 PM",
-      saturday: "9:00 AM - 10:00 PM",
-      sunday: "9:00 AM - 10:00 PM"
-    },
-    image: "/store-front.jpg", // You can add your store image
-    mapLink: "https://maps.app.goo.gl/mtzjezPxuYSxTHZu6"
-  }
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setReady(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* Hero Section with Store Image */}
-      <div className="relative h-[400px] md:h-[500px] bg-gradient-to-r from-emerald-100 via-green-50 to-teal-100">
-        <div className="absolute inset-0 bg-emerald-900/10" />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
-          <h1 className="text-4xl md:text-6xl font-serif text-emerald-900 mb-4">
-            Visit Our Store
+    <div className="min-h-screen bg-[#1a0f0d] text-[#f5ebe4]">
+      <style jsx>{`
+        @keyframes fsRise {
+          from {
+            opacity: 0;
+            transform: translateY(28px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fsKenBurns {
+          from {
+            transform: scale(1.08);
+          }
+          to {
+            transform: scale(1);
+          }
+        }
+        @keyframes fsPulse {
+          0%,
+          100% {
+            opacity: 0.45;
+          }
+          50% {
+            opacity: 0.85;
+          }
+        }
+        .fs-rise {
+          opacity: 0;
+        }
+        .fs-ready .fs-rise {
+          animation: fsRise 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .fs-ready .fs-rise-1 {
+          animation-delay: 0.08s;
+        }
+        .fs-ready .fs-rise-2 {
+          animation-delay: 0.2s;
+        }
+        .fs-ready .fs-rise-3 {
+          animation-delay: 0.34s;
+        }
+        .fs-ready .fs-rise-4 {
+          animation-delay: 0.48s;
+        }
+        .fs-hero-img {
+          animation: fsKenBurns 14s ease-out forwards;
+        }
+        .fs-pin {
+          animation: fsPulse 2.8s ease-in-out infinite;
+        }
+      `}</style>
+
+      {/* Hero — one composition: brand, headline, line, CTA, full-bleed place image */}
+      <section
+        className={`relative min-h-[100svh] flex items-end overflow-hidden ${ready ? 'fs-ready' : ''}`}
+      >
+        <div className="absolute inset-0">
+          <img
+            src={STORE.heroImage}
+            alt="Nilaas fashion dresses — visit our Kozhikode store"
+            className="fs-hero-img absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1a0f0d] via-[#1a0f0d]/70 to-[#1a0f0d]/25" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(107,47,40,0.35),transparent_55%)]" />
+        </div>
+
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-5 sm:px-8 pb-16 sm:pb-24 pt-32">
+          <p className="fs-rise fs-rise-1 font-serif text-5xl sm:text-7xl md:text-8xl tracking-tight text-white mb-6">
+            {STORE.name}
+          </p>
+          <h1 className="fs-rise fs-rise-2 text-xl sm:text-2xl md:text-3xl font-medium text-[#f0ddd3] max-w-xl leading-snug mb-4">
+            Visit our store in Kozhikode
           </h1>
-          <p className="text-xl md:text-2xl text-emerald-800 mb-8">
-            Experience luxury jewelry in the heart of Dubai's Gold Souq
+          <p className="fs-rise fs-rise-3 text-sm sm:text-base text-[#c9a99a] max-w-md leading-relaxed mb-10">
+            Try on dresses and co-ords in person at our Kunnamangalam store — the same home base as QuickFynd.
           </p>
-          <a
-            href={storeInfo.mapLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-600 text-white rounded-full font-semibold hover:bg-emerald-700 transition-all shadow-lg hover:shadow-xl"
-          >
-            <Navigation className="w-5 h-5" />
-            Get Directions
-          </a>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        {/* Store Info Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          {/* Location Card */}
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow border border-green-100">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-emerald-100 rounded-lg">
-                <MapPin className="w-6 h-6 text-emerald-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Location</h3>
-                <p className="text-gray-600">{storeInfo.address}</p>
-                <p className="text-sm text-gray-500 mt-2">{storeInfo.plusCode}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Phone Card */}
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow border border-green-100">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-teal-100 rounded-lg">
-                <Phone className="w-6 h-6 text-teal-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Contact</h3>
-                <a href={`tel:${storeInfo.phone}`} className="text-emerald-600 hover:underline">
-                  {storeInfo.phone}
-                </a>
-                <p className="text-sm text-gray-500 mt-2">Call for inquiries</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Hours Card */}
-          <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow border border-green-100">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <Clock className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Hours</h3>
-                <p className="text-gray-600">Mon-Thu, Sat-Sun</p>
-                <p className="text-sm text-gray-500">9:00 AM - 10:00 PM</p>
-                <p className="text-sm text-gray-500 mt-1">Friday: 2:00 PM - 10:00 PM</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* About Section */}
-        <div className="bg-white rounded-xl shadow-lg p-8 mb-12">
-          <h2 className="text-3xl font-serif text-gray-900 mb-6 text-center">
-            About NILAAS Jewelry
-          </h2>
-          <div className="prose prose-lg max-w-none text-gray-600">
-            <p className="mb-4">
-              Welcome to NILAAS, Dubai's premier destination for exquisite jewelry. Located in the heart 
-              of the historic Gold Souq at HIND Plaza, we bring you a curated collection of fine gold, 
-              diamond, and precious gemstone jewelry.
-            </p>
-            <p className="mb-4">
-              With decades of expertise in crafting and curating timeless pieces, NILAAS stands as a 
-              symbol of quality, trust, and elegance. Our collection features:
-            </p>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                22K & 18K Gold Jewelry
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                Certified Diamond Collections
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                Bridal & Wedding Sets
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                Custom Design Services
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                Traditional & Contemporary Designs
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                Precious Gemstone Jewelry
-              </li>
-            </ul>
-            <p className="mb-4">
-              Our experienced staff is dedicated to helping you find the perfect piece for every occasion, 
-              whether it's an engagement ring, wedding jewelry, or a special gift. We pride ourselves on 
-              offering competitive prices, authentic certifications, and exceptional customer service.
-            </p>
-            <p>
-              Visit us today and experience the NILAAS difference. We look forward to welcoming you to 
-              our showroom and helping you discover jewelry that tells your unique story.
-            </p>
-          </div>
-        </div>
-
-        {/* Google Maps */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-2xl font-serif text-gray-900">Find Us on the Map</h2>
-            <p className="text-gray-600 mt-2">
-              Located in the prestigious Gold Souq area of Dubai
-            </p>
-          </div>
-          <div className="w-full h-[450px] md:h-[600px]">
-            <iframe 
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3607.972842874779!2d55.294001677064!3d25.271498977663274!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3e5f43000479b799%3A0xc2f8ac2507fb9b2b!2sNILAAS!5e0!3m2!1sen!2sae!4v1769081436896!5m2!1sen!2sae" 
-              width="100%" 
-              height="100%" 
-              style={{ border: 0 }} 
-              allowFullScreen="" 
-              loading="lazy" 
-              referrerPolicy="no-referrer-when-downgrade"
-              className="w-full h-full"
-            />
-          </div>
-        </div>
-
-        {/* Call to Action */}
-        <div className="mt-12 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl shadow-xl p-8 md:p-12 text-center border border-green-200">
-          <h2 className="text-3xl md:text-4xl font-serif text-emerald-900 mb-4">
-            Ready to Visit Us?
-          </h2>
-          <p className="text-xl text-emerald-700 mb-8 max-w-2xl mx-auto">
-            Discover our exclusive collection and let our experts help you find the perfect piece
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="fs-rise fs-rise-4 flex flex-wrap gap-3">
             <a
-              href={storeInfo.mapLink}
+              href={STORE.mapLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-emerald-900 rounded-full font-semibold hover:bg-emerald-50 transition-all shadow-lg border-2 border-emerald-200"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#f5ebe4] text-[#1a0f0d] text-sm font-semibold tracking-wide uppercase hover:bg-white transition-colors"
             >
-              <Navigation className="w-5 h-5" />
-              Get Directions
-            </a>
-            <a
-              href={`tel:${storeInfo.phone}`}
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-emerald-600 text-white rounded-full font-semibold hover:bg-emerald-700 transition-all border-2 border-emerald-600"
-            >
-              <Phone className="w-5 h-5" />
-              Call Now
+              <Navigation className="w-4 h-4" />
+              Get directions
             </a>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Location details */}
+      <section className="relative bg-[#faf6f2] text-[#2a1210]">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16 sm:py-24">
+          <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+            <div className="lg:col-span-5">
+              <p className="text-[11px] tracking-[0.28em] uppercase text-[#8a5a4a] mb-3">
+                Our location
+              </p>
+              <h2 className="font-serif text-3xl sm:text-4xl text-[#2a1210] leading-tight mb-4">
+                Kunnamangalam, Kozhikode
+              </h2>
+              <p className="text-[#6e5048] leading-relaxed mb-8">
+                Find us on MLA Road near the police station in Ambalamukku — easy to reach from
+                Kozhikode city and the Calicut University area.
+              </p>
+
+              <div className="space-y-6 border-t border-[#2a1210]/10 pt-8">
+                <div className="flex gap-4">
+                  <MapPin className="w-5 h-5 text-[#6b2f28] shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-[#9a7d72] mb-1">Address</p>
+                    <p className="text-[#2a1210] leading-relaxed">{STORE.address}</p>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <Clock className="w-5 h-5 text-[#6b2f28] shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-[#9a7d72] mb-1">Hours</p>
+                    <p className="text-[#2a1210]">{STORE.hours}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-7">
+              <div className="relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden bg-[#1a0f0d]">
+                <iframe
+                  title="Nilaas store map — Kunnamangalam, Kozhikode"
+                  src={STORE.mapEmbed}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="absolute inset-0 w-full h-full grayscale-[20%] contrast-[1.05]"
+                />
+                <div className="pointer-events-none absolute top-4 left-4 flex items-center gap-2 bg-[#1a0f0d]/85 text-[#f5ebe4] px-3 py-2 text-xs tracking-wide">
+                  <span className="fs-pin inline-block w-2 h-2 rounded-full bg-[#c45c48]" />
+                  Ambalamukku · Kozhikode
+                </div>
+              </div>
+              <a
+                href={STORE.mapLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#6b2f28] hover:text-[#2a1210] transition-colors"
+              >
+                Open in Google Maps
+                <ArrowUpRight className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Closing CTA */}
+      <section className="bg-[#2a1210] text-[#f5ebe4]">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16 sm:py-20 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-8">
+          <div>
+            <p className="font-serif text-3xl sm:text-4xl mb-3">Come say hello</p>
+            <p className="text-[#c9a99a] max-w-md leading-relaxed">
+              Walk in during store hours — we&apos;ll help you find the right fit, fabric, and finish.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href={STORE.mapLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#f5ebe4] text-[#2a1210] text-sm font-semibold uppercase tracking-wide hover:bg-white transition-colors"
+            >
+              <Navigation className="w-4 h-4" />
+              Directions
+            </a>
+            <a
+              href={`https://wa.me/${SITE.whatsapp}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 border border-[#f5ebe4]/30 text-sm font-semibold uppercase tracking-wide hover:border-[#f5ebe4] transition-colors"
+            >
+              WhatsApp us
+            </a>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

@@ -3,64 +3,111 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import axios from 'axios'
+import { SITE } from '@/lib/site'
+
+const DEFAULT_HEADING = {
+  title: 'The Nilaas edit',
+  subtitle: 'Ways to shop, style, and visit us',
+}
+
+const DEFAULT_EXPERIENCES = [
+  {
+    title: 'Visit our store',
+    image: '/find-store-fashion-hero.png',
+    link: '/find-store',
+  },
+  {
+    title: 'New arrivals',
+    image:
+      'https://images.unsplash.com/photo-1743229995753-69be4b438204?auto=format&fit=crop&w=1200&q=80',
+    link: '/shop?category=new-arrivals',
+  },
+  {
+    title: 'Shop dresses',
+    image:
+      'https://images.unsplash.com/photo-1740992556357-f7fe9afff763?auto=format&fit=crop&w=1200&q=80',
+    link: '/shop?category=dresses',
+  },
+  {
+    title: 'WhatsApp us',
+    image:
+      'https://images.unsplash.com/photo-1742800786544-e935375035e3?auto=format&fit=crop&w=1200&q=80',
+    link: `https://wa.me/${SITE.whatsapp}`,
+  },
+  {
+    title: 'Style notes',
+    image:
+      'https://images.unsplash.com/photo-1766994063823-ed214f883548?auto=format&fit=crop&w=1200&q=80',
+    link: '/blog',
+  },
+  {
+    title: 'Help & sizing',
+    image:
+      'https://images.unsplash.com/photo-1758985402638-6028bae83b98?auto=format&fit=crop&w=1200&q=80',
+    link: '/faq',
+  },
+]
 
 export default function NilaasExperience() {
-  const [heading, setHeading] = useState({
-    title: 'Nilaas Experience',
-    subtitle: 'Find a Boutique or Book a Consultation'
-  })
-  const [experiences, setExperiences] = useState([])
+  const [heading, setHeading] = useState(DEFAULT_HEADING)
+  const [experiences, setExperiences] = useState(DEFAULT_EXPERIENCES)
   const [loading, setLoading] = useState(true)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     fetchData()
   }, [])
 
+  useEffect(() => {
+    if (!loading) {
+      const id = requestAnimationFrame(() => setReady(true))
+      return () => cancelAnimationFrame(id)
+    }
+  }, [loading])
+
   const fetchData = async () => {
     try {
       const settingsRes = await axios.get('/api/store/settings')
+      const remoteHeading = settingsRes.data.settings?.section7Heading
+      const remoteExperiences = settingsRes.data.settings?.section7Experiences
 
-      if (settingsRes.data.settings?.section7Heading) {
-        setHeading(settingsRes.data.settings.section7Heading)
+      if (remoteHeading?.title) {
+        setHeading({ ...DEFAULT_HEADING, ...remoteHeading })
       }
 
-      if (settingsRes.data.settings?.section7Experiences) {
-        const dbExperiences = settingsRes.data.settings.section7Experiences
-        // Normalize image key to support legacy payloads.
-        const validExperiences = dbExperiences
-          .map((exp) => ({
-            ...exp,
-            image: exp.image || exp.imageUrl || exp.bannerImage || ''
+      if (Array.isArray(remoteExperiences) && remoteExperiences.length > 0) {
+        const validExperiences = remoteExperiences
+          .map((exp, i) => ({
+            title: exp.title || DEFAULT_EXPERIENCES[i]?.title || '',
+            image:
+              exp.image ||
+              exp.imageUrl ||
+              exp.bannerImage ||
+              DEFAULT_EXPERIENCES[i]?.image ||
+              '',
+            link: exp.link || DEFAULT_EXPERIENCES[i]?.link || '/shop',
           }))
-          .filter(exp => exp.title)
-        setExperiences(validExperiences)
+          .filter((exp) => exp.title)
+        if (validExperiences.length > 0) setExperiences(validExperiences)
       }
-
-      setLoading(false)
     } catch (error) {
       console.error('Error fetching section 7 data:', error)
+    } finally {
       setLoading(false)
     }
   }
 
-  // Show section even if no experiences are configured yet
   if (loading) {
     return (
-      <section className="w-full bg-gradient-to-b from-gray-50 to-white py-12 sm:py-16 lg:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10 sm:mb-12">
-            <div className="h-10 sm:h-12 lg:h-14 w-[320px] sm:w-[460px] max-w-full bg-gray-200 rounded-lg mx-auto animate-pulse mb-3" />
-            <div className="h-6 w-56 sm:w-72 bg-gray-200 rounded-lg mx-auto animate-pulse" />
+      <section className="w-full bg-[#f3ebe4] py-16 sm:py-20">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="text-center mb-12">
+            <div className="h-10 w-64 bg-[#e8ddd4] mx-auto mb-3 animate-pulse" />
+            <div className="h-4 w-48 bg-[#e8ddd4] mx-auto animate-pulse" />
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {Array.from({ length: 6 }).map((_, idx) => (
-              <div key={idx} className="overflow-hidden rounded-xl bg-white shadow-md">
-                <div className="aspect-[4/3] bg-gray-200 animate-pulse" />
-                <div className="p-4">
-                  <div className="h-5 w-2/3 mx-auto bg-gray-200 rounded animate-pulse" />
-                </div>
-              </div>
+              <div key={idx} className="aspect-[3/4] bg-[#e8ddd4] animate-pulse" />
             ))}
           </div>
         </div>
@@ -69,55 +116,107 @@ export default function NilaasExperience() {
   }
 
   return (
-    <section className="w-full bg-gradient-to-b from-gray-50 to-white py-12 sm:py-16 lg:py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Heading */}
-        <div className="text-center mb-10 sm:mb-12">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-gray-900 mb-2">
+    <section className={`w-full bg-[#f3ebe4] py-16 sm:py-20 lg:py-24 ${ready ? 'nx-ready' : ''}`}>
+      <style jsx>{`
+        @keyframes nxRise {
+          from {
+            opacity: 0;
+            transform: translateY(18px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .nx-item {
+          opacity: 0;
+        }
+        .nx-ready .nx-item {
+          animation: nxRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .nx-ready .nx-item:nth-child(1) {
+          animation-delay: 0.04s;
+        }
+        .nx-ready .nx-item:nth-child(2) {
+          animation-delay: 0.1s;
+        }
+        .nx-ready .nx-item:nth-child(3) {
+          animation-delay: 0.16s;
+        }
+        .nx-ready .nx-item:nth-child(4) {
+          animation-delay: 0.22s;
+        }
+        .nx-ready .nx-item:nth-child(5) {
+          animation-delay: 0.28s;
+        }
+        .nx-ready .nx-item:nth-child(6) {
+          animation-delay: 0.34s;
+        }
+      `}</style>
+
+      <div className="max-w-6xl mx-auto px-5 sm:px-8">
+        <div className="text-center mb-10 sm:mb-14">
+          <p className="text-[11px] tracking-[0.28em] uppercase text-[#8a5a4a] mb-3">
+            {SITE.name}
+          </p>
+          <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl text-[#2a1210] mb-3">
             {heading.title}
           </h2>
-          <p className="text-base sm:text-lg text-gray-600 font-light">
+          <p className="text-sm sm:text-base text-[#6e5048] max-w-md mx-auto leading-relaxed">
             {heading.subtitle}
           </p>
         </div>
 
-        {/* Grid Layout - 3 columns x 2 rows */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {experiences.length > 0 ? experiences.map((experience, index) => (
-            <Link
-              key={index}
-              href={experience.link || '#'}
-              className="group relative overflow-hidden rounded-xl shadow-md hover:shadow-2xl transition-all duration-500 bg-white"
-            >
-              {/* Image Container */}
-              <div className="aspect-[4/3] relative overflow-hidden bg-gray-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {experiences.map((experience, index) => {
+            const isExternal = experience.link?.startsWith('http')
+            const className =
+              'nx-item group relative block aspect-[3/4] overflow-hidden bg-[#1a0f0d] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2a1210]'
+
+            const inner = (
+              <>
                 {experience.image ? (
                   <img
                     src={experience.image}
                     alt={experience.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    loading="lazy"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                    <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#2a1210] to-[#6b2f28]" />
                 )}
-              </div>
-              
-              {/* Title */}
-              <div className="p-4 text-center bg-white">
-                <h3 className="text-sm sm:text-base font-semibold text-gray-900 uppercase tracking-wide">
-                  {experience.title}
-                </h3>
-              </div>
-            </Link>
-          )) : (
-            <div className="col-span-full text-center py-12">
-              <p className="text-gray-500">No experiences configured yet. Go to <Link href="/store/section-7" className="text-blue-600 hover:underline">/store/section-7</Link> to add them.</p>
-            </div>
-          )}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1a0f0d]/90 via-[#1a0f0d]/25 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+                  <h3 className="text-[12px] sm:text-[13px] font-semibold uppercase tracking-[0.18em] text-[#f5ebe4]">
+                    {experience.title}
+                  </h3>
+                  <span className="mt-2 inline-block text-[11px] tracking-wide text-[#c9a99a] opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                    Explore →
+                  </span>
+                </div>
+              </>
+            )
+
+            if (isExternal) {
+              return (
+                <a
+                  key={index}
+                  href={experience.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={className}
+                >
+                  {inner}
+                </a>
+              )
+            }
+
+            return (
+              <Link key={index} href={experience.link || '/shop'} className={className}>
+                {inner}
+              </Link>
+            )
+          })}
         </div>
       </div>
     </section>

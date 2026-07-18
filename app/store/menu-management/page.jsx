@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import PageTitle from '@/components/PageTitle'
+import { DEFAULT_FOOTER_SECTIONS } from '@/lib/footerDefaults'
 
 export default function MenuManagement() {
   const [activeTab, setActiveTab] = useState('navbar') // 'navbar' or 'footer'
@@ -81,8 +82,10 @@ export default function MenuManagement() {
         setNavActionsVisibility({ store: true, wishlist: true, cart: true })
       }
 
-      if (settingsRes.data.settings?.footerSections) {
+      if (Array.isArray(settingsRes.data.settings?.footerSections) && settingsRes.data.settings.footerSections.length > 0) {
         setFooterSections(settingsRes.data.settings.footerSections)
+      } else {
+        setFooterSections(DEFAULT_FOOTER_SECTIONS)
       }
 
       if (settingsRes.data.settings?.topBar) {
@@ -126,9 +129,15 @@ export default function MenuManagement() {
   }
 
   const addNavMenuItem = () => {
-    setNavMenuItems([...navMenuItems, { name: 'New Item', link: '#', hasDropdown: false, icon: '' }])
+    setNavMenuItems([...navMenuItems, { name: 'New Item', link: '/shop', hasDropdown: false, icon: '' }])
+    // Adding an item should turn the storefront nav bar on
+    if (!navMenuEnabled) {
+      setNavMenuEnabled(true)
+      toast.success('Menu item added — navigation bar enabled')
+    } else {
+      toast.success('New menu item added')
+    }
     setHasNavChanges(true)
-    toast.success('New menu item added')
   }
 
   const handleNavIconUpload = async (index, file) => {
@@ -282,6 +291,15 @@ export default function MenuManagement() {
     toast.success('Footer section added')
   }
 
+  const loadDefaultFooterSections = () => {
+    setFooterSections(DEFAULT_FOOTER_SECTIONS.map((section) => ({
+      ...section,
+      links: section.links.map((link) => ({ ...link })),
+    })))
+    setHasFooterChanges(true)
+    toast.success('Default footer sections loaded — click Save Footer Menu')
+  }
+
   const deleteFooterSection = (sectionIndex) => {
     const updated = (footerSections || []).filter((_, i) => i !== sectionIndex)
     setFooterSections(updated)
@@ -330,16 +348,18 @@ export default function MenuManagement() {
         navMenuEnabled,
         navActionsVisibility
       })
-      toast.success('Navigation menu updated')
       setEditingNavIndex(null)
       setHasNavChanges(false)
-      // Update local state with returned data instead of refetching
       if (response.data.settings?.navMenuItems) {
         setNavMenuItems(response.data.settings.navMenuItems)
       }
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('navMenuUpdated'))
+        try {
+          localStorage.setItem('nav:menu:broadcast', String(Date.now()))
+        } catch {}
       }
+      toast.success('Navigation menu updated')
     } catch (error) {
       console.error('Save error:', error)
       toast.error('Failed to update menu')
@@ -446,7 +466,7 @@ export default function MenuManagement() {
           <div className="mb-6">
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Navigation Bar Menu</h3>
             <p className="text-sm text-gray-600">
-              Manage the top navigation menu items (All Jewellery, Gold, Diamond, etc.)
+              Manage the top navigation menu items (Shop, Dresses, Co-ords, etc.). Remember to click Save after editing.
             </p>
           </div>
 
@@ -471,6 +491,11 @@ export default function MenuManagement() {
                 </span>
               </label>
             </div>
+            {!navMenuEnabled && navMenuItems.length > 0 && (
+              <p className="mt-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                Navigation is <strong>disabled</strong>, so your {navMenuItems.length} menu item{navMenuItems.length === 1 ? '' : 's'} will not appear on the site. Turn this on and click Save.
+              </p>
+            )}
           </div>
 
           <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
@@ -805,7 +830,13 @@ export default function MenuManagement() {
             </p>
           </div>
 
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end gap-2 mb-4">
+            <button
+              onClick={loadDefaultFooterSections}
+              className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 border border-gray-300"
+            >
+              Load default sections
+            </button>
             <button
               onClick={addFooterSection}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
@@ -813,6 +844,20 @@ export default function MenuManagement() {
               + Add Section
             </button>
           </div>
+
+          {(!footerSections || footerSections.length === 0) && (
+            <div className="mb-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+              <p className="text-sm text-gray-600 mb-3">
+                No footer sections yet. Load defaults (Shop, Categories, Policies, Company) or add your own.
+              </p>
+              <button
+                onClick={loadDefaultFooterSections}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Load default sections
+              </button>
+            </div>
+          )}
 
           <div className="space-y-6">
             {footerSections.map((section, sectionIndex) => (

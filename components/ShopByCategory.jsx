@@ -3,8 +3,42 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-const CACHE_KEY = 'shop-categories:v1'
+const CACHE_KEY = 'shop-categories:v2'
 const CACHE_TTL_MS = 5 * 60 * 1000
+
+const DEFAULT_HEADING = {
+  title: 'Shop by category',
+  subtitle: 'Find your next favourite look'
+}
+
+function mapParentCategories(allCategories, selectedIds, heading) {
+  const parentCategories = (Array.isArray(allCategories) ? allCategories : []).filter(
+    (cat) => !cat.parentId
+  )
+  let pickedCategories = parentCategories
+
+  if (selectedIds.length > 0) {
+    const selectedSet = new Set(selectedIds)
+    const selectedPool = parentCategories.filter((cat) =>
+      selectedSet.has(String(cat._id))
+    )
+    const orderedSelected = selectedIds
+      .map((id) => selectedPool.find((cat) => String(cat._id) === id))
+      .filter(Boolean)
+    pickedCategories = orderedSelected.length > 0 ? orderedSelected : parentCategories
+  }
+
+  return {
+    heading,
+    categories: pickedCategories.slice(0, 7).map((cat) => ({
+      _id: cat._id,
+      title: cat.name,
+      image: cat.image,
+      link: `/category/${cat.slug || cat._id}`,
+      isActive: true
+    }))
+  }
+}
 
 export default function ShopByCategory() {
   const [categories, setCategories] = useState([])
@@ -20,12 +54,12 @@ export default function ShopByCategory() {
       const raw = sessionStorage.getItem(CACHE_KEY)
       if (raw) {
         const cached = JSON.parse(raw)
-        if (cached?.data && Date.now() - cached.ts < CACHE_TTL_MS) {
-          setHeading(cached.data.heading || {
-            title: 'Find Your Perfect Match',
-            subtitle: 'Shop by Categories'
-          })
-          setCategories(Array.isArray(cached.data.categories) ? cached.data.categories : [])
+        const cachedCats = Array.isArray(cached?.data?.categories)
+          ? cached.data.categories
+          : []
+        if (cachedCats.length > 0 && Date.now() - cached.ts < CACHE_TTL_MS) {
+          setHeading(cached.data.heading || DEFAULT_HEADING)
+          setCategories(cachedCats)
           setLoading(false)
         }
       }
@@ -33,64 +67,49 @@ export default function ShopByCategory() {
 
     const fetchData = async () => {
       try {
-        const nextDefaults = {
-          title: 'Find Your Perfect Match',
-          subtitle: 'Shop by Categories'
-        }
-        const res = await fetch('/api/store/shop-categories', { cache: 'no-store' })
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`)
+        let nextHeading = DEFAULT_HEADING
+        let nextCategories = []
+
+        // Primary: combined shop-categories endpoint
+        try {
+          const res = await fetch('/api/store/shop-categories', { cache: 'no-store' })
+          if (res.ok) {
+            const data = await res.json()
+            nextHeading = data?.heading || nextHeading
+            nextCategories = Array.isArray(data?.categories) ? data.categories : []
+          }
+        } catch (primaryError) {
+          console.warn('Shop categories primary fetch failed:', primaryError)
         }
 
-        const data = await res.json()
-        let nextHeading = data?.heading || nextDefaults
-        let nextCategories = Array.isArray(data?.categories) ? data.categories : []
-
-        // Fallback: when combined API returns empty categories, resolve from source APIs.
+        // Fallback: resolve from categories + settings when primary is empty/unavailable
         if (nextCategories.length === 0) {
-          const [categoriesRes, settingsRes] = await Promise.all([
-            fetch('/api/store/categories', { cache: 'no-store' }),
-            fetch('/api/store/settings', { cache: 'no-store' })
-          ])
+          try {
+            const [categoriesRes, settingsRes] = await Promise.all([
+              fetch('/api/store/categories', { cache: 'no-store' }),
+              fetch('/api/store/settings', { cache: 'no-store' })
+            ])
 
-          if (categoriesRes.ok && settingsRes.ok) {
-            const categoriesData = await categoriesRes.json()
-            const settingsData = await settingsRes.json()
+            const categoriesData = categoriesRes.ok ? await categoriesRes.json() : null
+            const settingsData = settingsRes.ok ? await settingsRes.json() : null
             const settings = settingsData?.settings || {}
-
-            nextHeading = settings?.shopCategoriesHeading || nextHeading
 
             const selectedIds = Array.isArray(settings?.shopCategoriesDisplay?.selectedIds)
               ? settings.shopCategoriesDisplay.selectedIds.map((id) => String(id))
               : []
 
-            const allCategories = Array.isArray(categoriesData?.categories)
-              ? categoriesData.categories
-              : []
-
-            const parentCategories = allCategories.filter((cat) => !cat.parentId)
-            let pickedCategories = parentCategories
-
-            if (selectedIds.length > 0) {
-              const selectedSet = new Set(selectedIds)
-              const selectedPool = parentCategories.filter((cat) =>
-                selectedSet.has(String(cat._id))
-              )
-
-              const orderedSelected = selectedIds
-                .map((id) => selectedPool.find((cat) => String(cat._id) === id))
-                .filter(Boolean)
-
-              pickedCategories = orderedSelected.length > 0 ? orderedSelected : parentCategories
-            }
-
-            nextCategories = pickedCategories.slice(0, 7).map((cat) => ({
-              _id: cat._id,
-              title: cat.name,
-              image: cat.image,
-              link: `/category/${cat.slug || cat._id}`,
-              isActive: true
-            }))
+            const resolved = mapParentCategories(
+              categoriesData?.categories,
+              selectedIds,
+              {
+                title: settings?.shopCategoriesHeading?.title || nextHeading.title,
+                subtitle: settings?.shopCategoriesHeading?.subtitle || nextHeading.subtitle
+              }
+            )
+            nextHeading = resolved.heading
+            nextCategories = resolved.categories
+          } catch (fallbackError) {
+            console.error('Shop categories fallback failed:', fallbackError)
           }
         }
 
@@ -107,10 +126,12 @@ export default function ShopByCategory() {
                 categories: nextCategories
               }
             }))
+          } else {
+            sessionStorage.removeItem(CACHE_KEY)
           }
         } catch {}
       } catch (error) {
-        console.error('Error fetching data:', error)
+        console.error('Error fetching shop categories:', error)
         setLoading(false)
       }
     }
@@ -121,22 +142,25 @@ export default function ShopByCategory() {
   const skeletonCards = Array.from({ length: 8 })
 
   return (
-    <section className="w-full bg-white py-8 sm:py-10 lg:py-12">
+    <section className="w-full bg-[#faf6f2] py-10 sm:py-12 lg:py-14 border-y border-[#2a1210]/08">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading */}
         <div className="text-center mb-10 sm:mb-12">
           {loading ? (
             <>
-              <div className="h-10 sm:h-12 lg:h-14 w-[320px] sm:w-[460px] max-w-full bg-gray-200 rounded-lg mx-auto animate-pulse mb-3" />
-              <div className="h-6 w-44 sm:w-52 bg-gray-200 rounded-lg mx-auto animate-pulse" />
+              <div className="h-10 sm:h-12 lg:h-14 w-[320px] sm:w-[460px] max-w-full bg-[#e8ddd4] rounded-lg mx-auto animate-pulse mb-3" />
+              <div className="h-6 w-44 sm:w-52 bg-[#e8ddd4] rounded-lg mx-auto animate-pulse" />
             </>
           ) : (
             <>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-gray-900 mb-2">
-                {heading.title}
+              <p className="text-[11px] tracking-[0.28em] uppercase text-[#8a5a4a] mb-3">
+                Browse
+              </p>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-[#2a1210] mb-2">
+                {heading.title || 'Shop by category'}
               </h2>
-              <p className="text-base sm:text-lg text-gray-500 font-light">
-                {heading.subtitle}
+              <p className="text-base sm:text-lg text-[#6e5048] font-light">
+                {heading.subtitle || 'Find your next favourite look'}
               </p>
             </>
           )}

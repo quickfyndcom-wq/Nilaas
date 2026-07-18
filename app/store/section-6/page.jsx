@@ -7,34 +7,34 @@ import PageTitle from '@/components/PageTitle'
 
 export default function Section6Settings() {
   const [settings, setSettings] = useState({
-    backgroundColor: '#fef3c7', // amber-50
+    backgroundColor: '#faf6f2',
     leftSection: {
-      title: '#GiftOfChoice',
-      titleColor: '#dc2626', // red-600
-      subtitle: "Breathtaking gifts for your loved one's",
-      subtitleColor: '#374151', // gray-700
-      price: 'STARTING AT ₹10,000',
-      priceColor: '#dc2626', // red-600
-      buttonText: 'Explore Now',
-      buttonLink: '/shop?collection=gifts',
-      buttonColor: '#dc2626', // red-600
-      buttonBgColor: '#dc2626' // red-600
+      title: 'The gift edit',
+      titleColor: '#2a1210',
+      subtitle: 'Thoughtful dresses & co-ords for every celebration',
+      subtitleColor: '#6e5048',
+      price: 'From ₹649',
+      priceColor: '#6b2f28',
+      buttonText: 'Shop gifts',
+      buttonLink: '/shop',
+      buttonColor: '#2a1210',
+      buttonBgColor: '#2a1210'
     },
     rightSection: {
       branding: 'Nilaas',
-      brandingColor: '#f59e0b', // amber-500
-      title: 'Exchange your Old Gold',
-      titleColor: '#111827', // gray-900
-      subtitle: 'for 100% Value!',
-      subtitleColor: '#dc2626', // red-600
-      description1: 'Unlock full value for your old gold today with',
-      description1Color: '#2563eb', // blue-600
-      description2: 'our Exchange Program!',
-      description2Color: '#111827', // gray-900
-      buttonText: 'Know more',
-      buttonLink: '/exchange-gold',
-      buttonColor: '#f59e0b', // amber-500
-      buttonBgColor: '#f59e0b' // amber-500
+      brandingColor: '#8a5a4a',
+      title: 'Visit our Kozhikode store',
+      titleColor: '#2a1210',
+      subtitle: 'Try before you buy',
+      subtitleColor: '#6b2f28',
+      description1: 'Walk in at Kunnamangalam — try fabrics, fits, and finishes',
+      description1Color: '#6e5048',
+      description2: 'with our team in person.',
+      description2Color: '#2a1210',
+      buttonText: 'Find store',
+      buttonLink: '/find-store',
+      buttonColor: '#2a1210',
+      buttonBgColor: '#2a1210'
     }
   })
   const [editing, setEditing] = useState(false)

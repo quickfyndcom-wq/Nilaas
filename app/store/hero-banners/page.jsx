@@ -101,15 +101,35 @@ export default function StoreHeroBannersPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
-    if (!formData.title) {
-      toast.error('Title is required')
+
+    const title = String(formData.title || '').trim()
+    const image = String(formData.image || '').trim()
+
+    if (!image) {
+      toast.error('Banner image is required (paste URL or upload file)')
       return
     }
 
-    if (!formData.image) {
-      toast.error('Banner image is required (paste URL or upload file)')
-      return
+    const subtitle = String(formData.subtitle || '').trim()
+    const badge = String(formData.badge || '').trim()
+    const cta = String(formData.cta || '').trim()
+    const description = String(formData.description || '').trim()
+
+    const payload = {
+      ...formData,
+      title,
+      subtitle,
+      badge,
+      description,
+      cta,
+      link: String(formData.link || '').trim() || '/shop',
+      image,
+      mobileImage: String(formData.mobileImage || '').trim(),
+      // Show on storefront only when the field has a value
+      showTitle: Boolean(title),
+      showSubtitle: Boolean(subtitle),
+      showBadge: Boolean(badge),
+      showButton: Boolean(cta),
     }
 
     try {
@@ -118,13 +138,13 @@ export default function StoreHeroBannersPage() {
       if (editingBanner) {
         await axios.put('/api/store/hero-banners', {
           bannerId: editingBanner._id,
-          ...formData
+          ...payload,
         })
         toast.success('Banner updated successfully')
       } else {
-        const res = await axios.post('/api/store/hero-banners', formData)
+        const res = await axios.post('/api/store/hero-banners', payload)
         if (res.data.warning) {
-          toast.success(res.data.message);
+          toast.success(res.data.message)
         } else {
           toast.success('Banner created successfully')
         }
@@ -145,17 +165,17 @@ export default function StoreHeroBannersPage() {
     setFormData({
       badge: banner.badge || '',
       subtitle: banner.subtitle || '',
-      title: banner.title || '',
+      title: String(banner.title || '').trim(),
       description: banner.description || '',
       cta: banner.cta || '',
       link: banner.link || '/shop',
       image: banner.image || '',
       mobileImage: banner.mobileImage || '',
       isActive: banner.isActive !== undefined ? banner.isActive : true,
-      showTitle: banner.showTitle !== undefined ? banner.showTitle : true,
-      showSubtitle: banner.showSubtitle !== undefined ? banner.showSubtitle : true,
-      showBadge: banner.showBadge !== undefined ? banner.showBadge : true,
-      showButton: banner.showButton !== undefined ? banner.showButton : true
+      showTitle: banner.showTitle !== false,
+      showSubtitle: banner.showSubtitle !== false,
+      showBadge: banner.showBadge !== false,
+      showButton: banner.showButton !== false,
     })
     setShowForm(true)
   }
@@ -254,7 +274,7 @@ export default function StoreHeroBannersPage() {
               {/* Title */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title <span className="text-red-500">*</span>
+                  Title <span className="text-xs text-gray-500">(leave empty to hide)</span>
                 </label>
                 <input
                   type="text"
@@ -263,14 +283,13 @@ export default function StoreHeroBannersPage() {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   placeholder="Your old gold."
-                  required
                 />
               </div>
 
               {/* Subtitle */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Subtitle
+                  Subtitle <span className="text-xs text-gray-500">(leave empty to hide)</span>
                 </label>
                 <input
                   type="text"
@@ -285,7 +304,7 @@ export default function StoreHeroBannersPage() {
               {/* Badge */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Badge Text
+                  Badge Text <span className="text-xs text-gray-500">(leave empty to hide)</span>
                 </label>
                 <input
                   type="text"
@@ -627,7 +646,9 @@ export default function StoreHeroBannersPage() {
                           {banner.badge}
                         </span>
                       )}
-                      <h3 className="text-xl font-bold text-gray-900">{banner.title}</h3>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {banner.title?.trim() || 'Untitled banner (image only)'}
+                      </h3>
                       {banner.subtitle && (
                         <p className="text-sm text-gray-600">{banner.subtitle}</p>
                       )}

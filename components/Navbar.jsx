@@ -193,8 +193,8 @@ const Navbar = () => {
   // Perf: cache categories + menu in sessionStorage and revalidate in background
   useEffect(() => {
     const CAT_KEY = 'nav:categories:v1'
-    const MENU_KEY = 'nav:menu:v1'
-    const MENU_ENABLED_KEY = 'nav:menu:enabled:v1'
+    const MENU_KEY = 'nav:menu:v3'
+    const MENU_ENABLED_KEY = 'nav:menu:enabled:v3'
     const ACTIONS_VISIBILITY_KEY = 'nav:actions:visibility:v1'
     const TTL = 10 * 60 * 1000 // 10 minutes
 
@@ -237,64 +237,82 @@ const Navbar = () => {
       }
     } catch {}
 
-    // 2) Revalidate both endpoints in parallel with timeout
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 6000)
+    // 2) Revalidate endpoints independently so a slow categories call
+    // cannot abort / wipe the nav menu settings fetch.
+    const controllers = []
+
+    const fetchWithTimeout = (url, ms = 10000) => {
+      const controller = new AbortController()
+      controllers.push(controller)
+      const timer = setTimeout(() => controller.abort(), ms)
+      return fetch(url, { cache: 'no-store', signal: controller.signal }).finally(() => {
+        clearTimeout(timer)
+      })
+    }
+
+    const applySettings = (settingsData) => {
+      const items = settingsData?.settings?.navMenuItems
+      const enabled = settingsData?.settings?.navMenuEnabled
+      const actionsVisibility = settingsData?.settings?.navActionsVisibility
+      if (Array.isArray(items)) {
+        setNavMenuItems(items)
+        try { sessionStorage.setItem(MENU_KEY, JSON.stringify({ ts: Date.now(), data: items })) } catch {}
+      }
+      if (typeof enabled === 'boolean') {
+        setNavMenuEnabled(enabled)
+        try { sessionStorage.setItem(MENU_ENABLED_KEY, JSON.stringify({ ts: Date.now(), data: enabled })) } catch {}
+      }
+      if (actionsVisibility && typeof actionsVisibility === 'object') {
+        const normalized = {
+          store: actionsVisibility.store !== false,
+          wishlist: actionsVisibility.wishlist !== false,
+          cart: actionsVisibility.cart !== false
+        }
+        setNavActionsVisibility(normalized)
+        try { sessionStorage.setItem(ACTIONS_VISIBILITY_KEY, JSON.stringify({ ts: Date.now(), data: normalized })) } catch {}
+      }
+    }
 
     const revalidate = async () => {
-      try {
-        const [catRes, settingsRes] = await Promise.all([
-          fetch('/api/categories', { cache: 'no-store', signal: controller.signal }),
-          fetch('/api/store/settings', { cache: 'no-store', signal: controller.signal })
-        ])
-        if (catRes.ok) {
+      const settingsPromise = fetchWithTimeout('/api/store/settings', 10000)
+        .then(async (settingsRes) => {
+          if (!settingsRes.ok) return
+          applySettings(await settingsRes.json())
+        })
+        .catch((err) => {
+          if (err?.name !== 'AbortError') console.error('Navbar settings fetch error:', err)
+        })
+
+      const categoriesPromise = fetchWithTimeout('/api/store/categories?lite=true', 10000)
+        .then(async (catRes) => {
+          if (!catRes.ok) return
           const catData = await catRes.json()
           if (Array.isArray(catData?.categories)) {
             setCategories(catData.categories)
             try { sessionStorage.setItem(CAT_KEY, JSON.stringify({ ts: Date.now(), data: catData.categories })) } catch {}
           }
-        }
-        if (settingsRes.ok) {
-          const settingsData = await settingsRes.json()
-          const items = settingsData?.settings?.navMenuItems
-          const enabled = settingsData?.settings?.navMenuEnabled
-          const actionsVisibility = settingsData?.settings?.navActionsVisibility
-          if (Array.isArray(items)) {
-            setNavMenuItems(items)
-            try { sessionStorage.setItem(MENU_KEY, JSON.stringify({ ts: Date.now(), data: items })) } catch {}
-          }
-          if (typeof enabled === 'boolean') {
-            setNavMenuEnabled(enabled)
-            try { sessionStorage.setItem(MENU_ENABLED_KEY, JSON.stringify({ ts: Date.now(), data: enabled })) } catch {}
-          }
-          if (actionsVisibility && typeof actionsVisibility === 'object') {
-            const normalized = {
-              store: actionsVisibility.store !== false,
-              wishlist: actionsVisibility.wishlist !== false,
-              cart: actionsVisibility.cart !== false
-            }
-            setNavActionsVisibility(normalized)
-            try { sessionStorage.setItem(ACTIONS_VISIBILITY_KEY, JSON.stringify({ ts: Date.now(), data: normalized })) } catch {}
-          }
-        }
-      } catch (err) {
-        if (err?.name !== 'AbortError') console.error('Navbar fetch error:', err)
-      } finally {
-        clearTimeout(timer)
-      }
+        })
+        .catch((err) => {
+          if (err?.name !== 'AbortError') console.error('Navbar categories fetch error:', err)
+        })
+
+      await Promise.all([settingsPromise, categoriesPromise])
     }
 
     revalidate()
 
     // Optional gentle refresh every 10 minutes
     const interval = setInterval(revalidate, TTL)
-    return () => { clearInterval(interval); controller.abort(); clearTimeout(timer) }
+    return () => {
+      clearInterval(interval)
+      controllers.forEach((c) => c.abort())
+    }
   }, [])
 
   // Instant menu refresh after dashboard updates nav items/icons.
   useEffect(() => {
-    const MENU_KEY = 'nav:menu:v1'
-    const MENU_ENABLED_KEY = 'nav:menu:enabled:v1'
+    const MENU_KEY = 'nav:menu:v3'
+    const MENU_ENABLED_KEY = 'nav:menu:enabled:v3'
     const ACTIONS_VISIBILITY_KEY = 'nav:actions:visibility:v1'
 
     const syncNavMenu = async () => {
@@ -329,7 +347,16 @@ const Navbar = () => {
     }
 
     window.addEventListener('navMenuUpdated', syncNavMenu)
-    return () => window.removeEventListener('navMenuUpdated', syncNavMenu)
+    window.addEventListener('focus', syncNavMenu)
+    const onStorage = (e) => {
+      if (e.key === 'nav:menu:broadcast') syncNavMenu()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => {
+      window.removeEventListener('navMenuUpdated', syncNavMenu)
+      window.removeEventListener('focus', syncNavMenu)
+      window.removeEventListener('storage', onStorage)
+    }
   }, [])
 
   // Product names for animated placeholder
@@ -549,37 +576,40 @@ const Navbar = () => {
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#2a1210]/10">
         <div className="max-w-[1400px] mx-auto px-3 sm:px-5 lg:px-8">
           {/* Main bar — same layout all pages */}
-          <div className="flex items-center gap-2 sm:gap-3 h-14 sm:h-16 lg:h-[4.5rem]">
-            {/* Menu */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden p-2 -ml-1 text-[#2a1210] hover:bg-[#faf7f4] transition shrink-0"
-              aria-label="Open menu"
-            >
-              <Menu size={22} />
-            </button>
-
-            {/* Back on inner pages (mobile) */}
-            {!isHomePage && (
+          <div className="relative flex items-center h-14 sm:h-16 lg:h-[4.5rem]">
+            {/* Left — menu only (back cluttered the mobile bar) */}
+            <div className="flex items-center shrink-0 z-10">
               <button
                 type="button"
-                onClick={() => router.back()}
-                className="md:hidden p-2 text-[#2a1210] hover:bg-[#faf7f4] transition shrink-0"
-                aria-label="Go back"
+                onClick={() => setMobileMenuOpen(true)}
+                className="lg:hidden p-2 -ml-1 text-[#2a1210] hover:bg-[#faf7f4] transition"
+                aria-label="Open menu"
               >
-                <ArrowLeft size={20} />
+                <Menu size={22} />
               </button>
-            )}
+              {!isHomePage && (
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="hidden sm:inline-flex md:hidden p-2 text-[#2a1210] hover:bg-[#faf7f4] transition"
+                  aria-label="Go back"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+              )}
+            </div>
 
-            {/* Logo */}
-            <Link href="/" className="shrink-0 flex items-center">
+            {/* Logo — centered on mobile, left-aligned from tablet */}
+            <Link
+              href="/"
+              className="absolute left-1/2 -translate-x-1/2 md:static md:translate-x-0 md:ml-1 shrink-0 flex items-center z-10"
+            >
               <Image
                 src={Logo}
                 alt="Nilaas"
                 width={72}
                 height={72}
-                className="object-contain h-10 w-auto sm:h-12 lg:h-14"
+                className="object-contain h-11 w-auto sm:h-12 lg:h-14"
                 priority
               />
             </Link>
@@ -601,8 +631,8 @@ const Navbar = () => {
               </div>
             </form>
 
-            {/* Actions — icon-first, labels from lg */}
-            <div className="ml-auto flex items-center gap-0.5 sm:gap-1 shrink-0">
+            {/* Actions — keep mobile lean: wishlist + cart (+ account from sm) */}
+            <div className="ml-auto flex items-center gap-0.5 sm:gap-1 shrink-0 z-10">
               {navActionsVisibility.store && (
                 <Link
                   href="/find-store"
@@ -662,7 +692,7 @@ const Navbar = () => {
               )}
 
               {firebaseUser ? (
-                <div className="relative" ref={userDropdownRef}>
+                <div className="relative hidden sm:block" ref={userDropdownRef}>
                   <button
                     type="button"
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
@@ -738,7 +768,7 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={() => setSignInOpen(true)}
-                  className="flex flex-col items-center justify-center w-10 sm:w-11 lg:w-14 h-10 sm:h-11 lg:h-auto lg:py-1 text-[#6e5048] hover:text-[#2a1210] hover:bg-[#faf7f4] lg:hover:bg-transparent transition"
+                  className="hidden sm:flex flex-col items-center justify-center w-10 sm:w-11 lg:w-14 h-10 sm:h-11 lg:h-auto lg:py-1 text-[#6e5048] hover:text-[#2a1210] hover:bg-[#faf7f4] lg:hover:bg-transparent transition"
                   aria-label="Account"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
@@ -768,12 +798,20 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Category nav — desktop */}
+        {/* Category nav — fashion strip */}
         {navMenuEnabled && navMenuItems.length > 0 && (
-          <div className="hidden lg:block border-t border-[#2a1210]/08">
+          <div className="hidden md:block border-t border-[#2a1210]/10 bg-white">
             <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 relative">
-              <div className="flex items-center justify-between gap-1 py-2.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <nav
+                aria-label="Shop categories"
+                className="flex items-center justify-center flex-wrap gap-x-6 gap-y-2 lg:gap-x-8 py-3.5"
+              >
                 {navMenuItems.map((item, index) => {
+                  const linkClass =
+                    'group relative shrink-0 text-[11px] lg:text-[12px] font-semibold uppercase tracking-[0.14em] text-[#4a3832] hover:text-[#2a1210] transition-colors inline-flex items-center gap-1.5 whitespace-nowrap py-1'
+                  const underline =
+                    'pointer-events-none absolute left-0 right-0 -bottom-0.5 h-px origin-left scale-x-0 bg-[#2a1210] transition-transform duration-300 group-hover:scale-x-100'
+
                   const isCollections =
                     item.hasDropdown && item.name.toLowerCase().includes('collection')
 
@@ -781,7 +819,7 @@ const Navbar = () => {
                     return (
                       <div
                         key={index}
-                        className="relative flex-1 flex justify-center min-w-0"
+                        className="relative shrink-0"
                         onMouseEnter={() => {
                           if (categoryTimer.current) clearTimeout(categoryTimer.current)
                           setCategoriesDropdownOpen(true)
@@ -794,26 +832,24 @@ const Navbar = () => {
                           }, 200)
                         }}
                       >
-                        <button
-                          type="button"
-                          className="text-[12px] xl:text-[13px] font-medium tracking-wide text-[#4a3832] hover:text-[#2a1210] transition inline-flex items-center gap-1.5 hover:underline underline-offset-[8px] decoration-[#2a1210] whitespace-nowrap px-1"
-                        >
+                        <button type="button" className={linkClass}>
                           {item.icon && (
-                            <img src={item.icon} alt="" className="w-4 h-4 object-contain opacity-80" aria-hidden="true" />
+                            <img src={item.icon} alt="" className="w-3.5 h-3.5 object-contain opacity-80" aria-hidden="true" />
                           )}
                           {item.name}
                           <svg
-                            className={`w-3.5 h-3.5 transition-transform ${categoriesDropdownOpen ? 'rotate-180' : ''}`}
+                            className={`w-3 h-3 transition-transform ${categoriesDropdownOpen ? 'rotate-180' : ''}`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
                           >
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                           </svg>
+                          <span className={underline} />
                         </button>
 
                         {categoriesDropdownOpen && categories.length > 0 && (
-                          <div className="absolute left-0 top-full mt-2 bg-white shadow-2xl border border-[#2a1210]/10 z-50 overflow-hidden flex">
+                          <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 bg-white shadow-2xl border border-[#2a1210]/10 z-50 overflow-hidden flex min-w-[280px]">
                             <div className="w-56 xl:w-64 bg-white border-r border-[#2a1210]/10">
                               {categories
                                 .filter((cat) => !cat.parentId)
@@ -831,9 +867,9 @@ const Navbar = () => {
                                     >
                                       <Link
                                         href={`/shop?category=${categorySlug}`}
-                                        className={`flex items-center justify-between px-4 py-3 hover:bg-white transition ${
+                                        className={`flex items-center justify-between px-4 py-3 hover:bg-[#faf7f4] transition ${
                                           hoveredCategory === category._id
-                                            ? 'bg-white text-[#2a1210]'
+                                            ? 'bg-[#faf7f4] text-[#2a1210]'
                                             : 'text-[#4a3832]'
                                         }`}
                                         onClick={() => {
@@ -893,15 +929,12 @@ const Navbar = () => {
 
                     if (!hasContent) {
                       return (
-                        <Link
-                          key={index}
-                          href={item.link || '#'}
-                          className="flex-1 justify-center text-[12px] xl:text-[13px] font-medium tracking-wide text-[#4a3832] hover:text-[#2a1210] transition inline-flex items-center gap-1.5 hover:underline underline-offset-[8px] decoration-[#2a1210] whitespace-nowrap px-1"
-                        >
+                        <Link key={index} href={item.link || '/shop'} className={linkClass}>
                           {item.icon && (
-                            <img src={item.icon} alt="" className="w-4 h-4 object-contain opacity-80" aria-hidden="true" />
+                            <img src={item.icon} alt="" className="w-3.5 h-3.5 object-contain opacity-80" aria-hidden="true" />
                           )}
                           {item.name}
+                          <span className={underline} />
                         </Link>
                       )
                     }
@@ -909,7 +942,7 @@ const Navbar = () => {
                     return (
                       <div
                         key={index}
-                        className="flex-1 flex justify-center relative min-w-0"
+                        className="relative shrink-0"
                         onMouseEnter={() => {
                           if (megaTimer.current) clearTimeout(megaTimer.current)
                           setOpenMegaIndex(index)
@@ -919,41 +952,41 @@ const Navbar = () => {
                           megaTimer.current = setTimeout(() => setOpenMegaIndex(null), 180)
                         }}
                       >
-                        <button
-                          type="button"
-                          className="text-[12px] xl:text-[13px] font-medium tracking-wide text-[#4a3832] hover:text-[#2a1210] transition inline-flex items-center gap-1.5 hover:underline underline-offset-[8px] decoration-[#2a1210] whitespace-nowrap px-1"
-                        >
+                        <button type="button" className={linkClass}>
                           {item.icon && (
-                            <img src={item.icon} alt="" className="w-4 h-4 object-contain opacity-80" aria-hidden="true" />
+                            <img src={item.icon} alt="" className="w-3.5 h-3.5 object-contain opacity-80" aria-hidden="true" />
                           )}
                           {item.name}
                           <svg
-                            className={`w-3.5 h-3.5 transition-transform ${openMegaIndex === index ? 'rotate-180' : ''}`}
+                            className={`w-3 h-3 transition-transform ${openMegaIndex === index ? 'rotate-180' : ''}`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
                           >
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                           </svg>
+                          <span className={underline} />
                         </button>
                       </div>
                     )
                   }
 
+                  const isSale = item.name.toLowerCase().includes('sale')
                   return (
                     <Link
                       key={index}
-                      href={item.link || '#'}
-                      className="flex-1 justify-center text-[12px] xl:text-[13px] font-medium tracking-wide text-[#4a3832] hover:text-[#2a1210] transition inline-flex items-center gap-1.5 hover:underline underline-offset-[8px] decoration-[#2a1210] whitespace-nowrap px-1"
+                      href={item.link || '/shop'}
+                      className={`${linkClass} ${isSale ? 'text-[#8b3a2f] hover:text-[#6b2f28]' : ''}`}
                     >
                       {item.icon && (
-                        <img src={item.icon} alt="" className="w-4 h-4 object-contain opacity-80" aria-hidden="true" />
+                        <img src={item.icon} alt="" className="w-3.5 h-3.5 object-contain opacity-80" aria-hidden="true" />
                       )}
                       {item.name}
+                      <span className={underline} />
                     </Link>
                   )
                 })}
-              </div>
+              </nav>
 
               {(() => {
                 const activeItem = openMegaIndex !== null ? navMenuItems[openMegaIndex] : null

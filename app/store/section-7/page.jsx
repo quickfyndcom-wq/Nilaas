@@ -6,12 +6,37 @@ import toast from 'react-hot-toast'
 import PageTitle from '@/components/PageTitle'
 
 const DEFAULT_EXPERIENCES = [
-  { title: 'VISIT OUR STORE', image: '', link: '/find-store' },
-  { title: 'BOOK AN APPOINTMENT', image: '', link: '/book-appointment' },
-  { title: 'TALK TO AN EXPERT', image: '', link: '/contact-expert' },
-  { title: 'DIGI GOLD', image: '', link: '/digital-gold' },
-  { title: 'BLOGS', image: '', link: '/blog' },
-  { title: 'JEWELLERY GUIDE', image: '', link: '/jewellery-guide' }
+  { title: 'Visit our store', image: '/find-store-fashion-hero.png', link: '/find-store' },
+  {
+    title: 'New arrivals',
+    image:
+      'https://images.unsplash.com/photo-1743229995753-69be4b438204?auto=format&fit=crop&w=1200&q=80',
+    link: '/shop?category=new-arrivals',
+  },
+  {
+    title: 'Shop dresses',
+    image:
+      'https://images.unsplash.com/photo-1740992556357-f7fe9afff763?auto=format&fit=crop&w=1200&q=80',
+    link: '/shop?category=dresses',
+  },
+  {
+    title: 'WhatsApp us',
+    image:
+      'https://images.unsplash.com/photo-1742800786544-e935375035e3?auto=format&fit=crop&w=1200&q=80',
+    link: 'https://wa.me/917592800864',
+  },
+  {
+    title: 'Style notes',
+    image:
+      'https://images.unsplash.com/photo-1766994063823-ed214f883548?auto=format&fit=crop&w=1200&q=80',
+    link: '/blog',
+  },
+  {
+    title: 'Help & sizing',
+    image:
+      'https://images.unsplash.com/photo-1758985402638-6028bae83b98?auto=format&fit=crop&w=1200&q=80',
+    link: '/faq',
+  },
 ]
 
 const normalizeExperience = (exp = {}, fallback = {}) => ({
@@ -22,8 +47,8 @@ const normalizeExperience = (exp = {}, fallback = {}) => ({
 
 export default function Section7Settings() {
   const [heading, setHeading] = useState({
-    title: 'Nilaas Experience',
-    subtitle: 'Find a Boutique or Book a Consultation'
+    title: 'The Nilaas edit',
+    subtitle: 'Ways to shop, style, and visit us',
   })
   const [experiences, setExperiences] = useState(DEFAULT_EXPERIENCES)
   const [editingHeading, setEditingHeading] = useState(false)

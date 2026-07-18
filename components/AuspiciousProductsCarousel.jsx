@@ -41,8 +41,8 @@ export default function AuspiciousProductsCarousel() {
   const list = useSelector((state) => state.product.list || [])
   const railRef = useRef(null)
   const [heading, setHeading] = useState({
-    title: 'For an Auspicious Beginning',
-    subtitle: 'Discover our most-loved designs, curated for this Akshaya Tritiya',
+    title: 'This week’s favourites',
+    subtitle: 'Most-loved dresses & kurtis from the Nilaas edit',
     image: '',
     visible: true
   })
@@ -172,8 +172,7 @@ export default function AuspiciousProductsCarousel() {
     <section
       className="relative w-full overflow-hidden py-14 sm:py-16 lg:py-20"
       style={{
-        background:
-          'radial-gradient(120% 80% at 0% 0%, #f3e4e0 0%, transparent 55%), radial-gradient(90% 70% at 100% 100%, #e8d5c8 0%, transparent 50%), linear-gradient(180deg, #faf6f3 0%, #f4ebe6 100%)'
+        background: '#faf6f2'
       }}
     >
       {/* Soft grain / fabric texture */}

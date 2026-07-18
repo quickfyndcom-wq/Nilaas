@@ -3,155 +3,177 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import axios from 'axios'
+import { SITE } from '@/lib/site'
+
+const DEFAULTS = {
+  backgroundColor: '#ffffff',
+  leftSection: {
+    title: 'The gift edit',
+    titleColor: '#2a1210',
+    subtitle: 'Thoughtful dresses & co-ords for every celebration',
+    subtitleColor: '#6e5048',
+    price: 'From ₹649',
+    priceColor: '#6b2f28',
+    buttonText: 'Shop gifts',
+    buttonLink: '/shop',
+    buttonColor: '#2a1210',
+    buttonBgColor: '#2a1210',
+  },
+  rightSection: {
+    branding: SITE.name,
+    brandingColor: '#8a5a4a',
+    title: 'Need a second opinion?',
+    titleColor: '#2a1210',
+    subtitle: 'Style help on WhatsApp',
+    subtitleColor: '#6b2f28',
+    description1: 'Share a screenshot or occasion — we’ll help you pick',
+    description1Color: '#6e5048',
+    description2: 'the right fit and fabric.',
+    description2Color: '#2a1210',
+    buttonText: 'WhatsApp us',
+    buttonLink: `https://wa.me/${SITE.whatsapp}`,
+    buttonColor: '#2a1210',
+    buttonBgColor: '#2a1210',
+  },
+}
 
 export default function PromotionBanner() {
-  const [settings, setSettings] = useState({
-    backgroundColor: '#fef3c7',
-    leftSection: {
-      title: '#GiftOfChdoice',
-      titleColor: '#dc2626',
-      subtitle: "Breathtaking gifts for your loved one's",
-      subtitleColor: '#374151',
-      price: 'STARTING AT ₹10,000',
-      priceColor: '#dc2626',
-      buttonText: 'Explore Now',
-      buttonLink: '/shop?collection=gifts',
-      buttonColor: '#dc2626',
-      buttonBgColor: '#dc2626'
-    },
-    rightSection: {
-      branding: 'Nilaas',
-      brandingColor: '#f59e0b',
-      title: 'Exchange your Old Gold',
-      titleColor: '#111827',
-      subtitle: 'for 100% Value!',
-      subtitleColor: '#dc2626',
-      description1: 'Unlock full value for your old gold today with',
-      description1Color: '#2563eb',
-      description2: 'our Exchange Program!',
-      description2Color: '#111827',
-      buttonText: 'Know more',
-      buttonLink: '/exchange-gold',
-      buttonColor: '#f59e0b',
-      buttonBgColor: '#f59e0b'
-    }
-  })
-  const [loading, setLoading] = useState(true)
+  const [settings, setSettings] = useState(DEFAULTS)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     fetchData()
   }, [])
 
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setReady(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   const fetchData = async () => {
     try {
       const settingsRes = await axios.get('/api/store/settings')
-
-      if (settingsRes.data.settings?.section6PromotionBanner) {
-        setSettings(settingsRes.data.settings.section6PromotionBanner)
+      const remote = settingsRes.data.settings?.section6PromotionBanner
+      if (remote) {
+        setSettings({
+          ...DEFAULTS,
+          ...remote,
+          leftSection: { ...DEFAULTS.leftSection, ...(remote.leftSection || {}) },
+          rightSection: { ...DEFAULTS.rightSection, ...(remote.rightSection || {}) },
+        })
       }
-
-      setLoading(false)
     } catch (error) {
       console.error('Error fetching section 6 data:', error)
-      setLoading(false)
     }
   }
 
+  const left = settings.leftSection || DEFAULTS.leftSection
+  const right = settings.rightSection || DEFAULTS.rightSection
+
   return (
-    <section className="w-full py-8 sm:py-10 lg:py-12" style={{ backgroundColor: settings.backgroundColor }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          
-          {/* Left Section */}
-          <div className="flex flex-col justify-center">
-            {/* Decorative Cross Icon */}
-            <div className="mb-8">
-              <div className="relative w-20 h-20">
-                {/* Vertical bar */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-2 h-20 bg-red-600"></div>
-                </div>
-                {/* Horizontal bar */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="h-2 w-20 bg-red-600"></div>
-                </div>
-                {/* Center circle */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-6 h-6 bg-red-600 rounded-full"></div>
-                </div>
-              </div>
-            </div>
+    <section
+      className={`w-full border-y border-[#2a1210]/08 ${ready ? 'pb-ready' : ''}`}
+      style={{ backgroundColor: '#ffffff' }}
+    >
+      <style jsx>{`
+        @keyframes pbRise {
+          from {
+            opacity: 0;
+            transform: translateY(16px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .pb-panel {
+          opacity: 0;
+        }
+        .pb-ready .pb-panel {
+          animation: pbRise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .pb-ready .pb-panel-2 {
+          animation-delay: 0.12s;
+        }
+      `}</style>
 
-            {/* Content */}
-            <h3 className="text-4xl sm:text-5xl font-serif mb-4" style={{ color: settings.leftSection.titleColor }}>
-              {settings.leftSection.title}
+      <div className="max-w-6xl mx-auto px-5 sm:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2">
+          {/* Left promo */}
+          <div className="pb-panel pb-panel-1 py-14 sm:py-16 lg:py-20 lg:pr-12 lg:border-r border-[#2a1210]/10">
+            <p className="text-[11px] tracking-[0.28em] uppercase text-[#8a5a4a] mb-4">
+              {SITE.name}
+            </p>
+            <h3
+              className="font-serif text-3xl sm:text-4xl leading-tight mb-3"
+              style={{ color: left.titleColor }}
+            >
+              {left.title}
             </h3>
-            <p className="text-sm mb-2" style={{ color: settings.leftSection.subtitleColor }}>
-              {settings.leftSection.subtitle}
+            <p className="text-sm leading-relaxed max-w-sm mb-3" style={{ color: left.subtitleColor }}>
+              {left.subtitle}
             </p>
-            <p className="text-lg font-bold mb-8" style={{ color: settings.leftSection.priceColor }}>
-              {settings.leftSection.price}
-            </p>
-            <div>
-              <Link
-                href={settings.leftSection.buttonLink}
-                className="inline-flex items-center gap-2 px-6 py-3 border-2 font-semibold text-white transition-all duration-300 rounded-full text-sm hover:brightness-95 hover:-translate-y-0.5"
-                style={{ 
-                  borderColor: settings.leftSection.buttonColor, 
-                  color: '#ffffff',
-                  backgroundColor: settings.leftSection.buttonBgColor
-                }}
+            {left.price ? (
+              <p
+                className="text-xs font-semibold uppercase tracking-[0.16em] mb-8"
+                style={{ color: left.priceColor }}
               >
-                {settings.leftSection.buttonText}
-                <span>›</span>
-              </Link>
-            </div>
+                {left.price}
+              </p>
+            ) : (
+              <div className="mb-8" />
+            )}
+            <Link
+              href={left.buttonLink || '/shop'}
+              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-[#f5ebe4] transition-colors hover:opacity-90"
+              style={{ backgroundColor: left.buttonBgColor || left.buttonColor || '#2a1210' }}
+            >
+              {left.buttonText || 'Shop now'}
+            </Link>
           </div>
 
-          {/* Right Section */}
-          <div className="flex flex-col justify-center">
-            {/* Branding */}
-            <p className="text-xs font-semibold tracking-widest mb-6" style={{ color: settings.rightSection.brandingColor }}>
-              {settings.rightSection.branding}
+          {/* Right promo */}
+          <div className="pb-panel pb-panel-2 py-14 sm:py-16 lg:py-20 lg:pl-12 border-t lg:border-t-0 border-[#2a1210]/10">
+            <p
+              className="text-[11px] tracking-[0.28em] uppercase mb-4"
+              style={{ color: right.brandingColor }}
+            >
+              {right.branding || SITE.name}
             </p>
-
-            {/* Main Heading */}
-            <h2 className="text-4xl sm:text-5xl font-serif mb-3 leading-tight" style={{ color: settings.rightSection.titleColor }}>
-              {settings.rightSection.title}
+            <h2
+              className="font-serif text-3xl sm:text-4xl leading-tight mb-2"
+              style={{ color: right.titleColor }}
+            >
+              {right.title}
             </h2>
-            
-            {/* Red accent text */}
-            <p className="text-2xl sm:text-3xl font-serif mb-6" style={{ color: settings.rightSection.subtitleColor }}>
-              {settings.rightSection.subtitle}
-            </p>
-
-            {/* Descriptive text */}
-            <div className="mb-8">
-              <p className="text-sm mb-1" style={{ color: settings.rightSection.description1Color }}>
-                {settings.rightSection.description1}
+            {right.subtitle ? (
+              <p className="font-serif text-xl sm:text-2xl mb-5" style={{ color: right.subtitleColor }}>
+                {right.subtitle}
               </p>
-              <p className="font-semibold" style={{ color: settings.rightSection.description2Color }}>
-                {settings.rightSection.description2}
-              </p>
+            ) : null}
+            <div className="mb-8 max-w-sm space-y-1">
+              {right.description1 ? (
+                <p className="text-sm leading-relaxed" style={{ color: right.description1Color }}>
+                  {right.description1}
+                </p>
+              ) : null}
+              {right.description2 ? (
+                <p className="text-sm font-medium leading-relaxed" style={{ color: right.description2Color }}>
+                  {right.description2}
+                </p>
+              ) : null}
             </div>
-
-            {/* CTA Button */}
-            <div>
-              <Link
-                href={settings.rightSection.buttonLink}
-                className="inline-flex items-center gap-2 px-6 py-3 border-2 font-semibold text-white transition-all duration-300 rounded-full text-sm hover:brightness-95 hover:-translate-y-0.5"
-                style={{ 
-                  borderColor: settings.rightSection.buttonColor, 
-                  color: '#ffffff',
-                  backgroundColor: settings.rightSection.buttonBgColor
-                }}
-              >
-                {settings.rightSection.buttonText}
-                <span>›</span>
-              </Link>
-            </div>
+            <Link
+              href={right.buttonLink || '/shop'}
+              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold uppercase tracking-wide border transition-colors hover:bg-[#2a1210] hover:text-[#f5ebe4]"
+              style={{
+                borderColor: right.buttonColor || '#2a1210',
+                color: right.buttonColor || '#2a1210',
+              }}
+            >
+              {right.buttonText || 'Learn more'}
+            </Link>
           </div>
-
         </div>
       </div>
     </section>

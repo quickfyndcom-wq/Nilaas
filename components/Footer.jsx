@@ -1,196 +1,185 @@
-"use client";
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import Logo from "../assets/logo/Asset 7.png";
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import Logo from '../assets/logo/Asset 7.png'
+import { SITE } from '@/lib/site'
+import { DEFAULT_FOOTER_SECTIONS } from '@/lib/footerDefaults'
 
 const Footer = () => {
-    const [footerSections, setFooterSections] = useState([
-        {
-            title: "Shop & orders",
-            links: [
-                { name: "Shipping policy", link: '/shipping-policy' },
-                { name: "Track your order", link: '/track-order' },
-                { name: "Returns & exchanges", link: '/return-policy' },
-                { name: "Refunds", link: '/refund-policy' },
-                { name: "Payment options", link: '/payment-options' },
-                { name: "Cancellation", link: '/cancellation-policy' },
-            ]
-        },
-        {
-            title: "Company",
-            links: [
-                { name: "About Nilaas", link: '/about-us' },
-                { name: "Contact us", link: '/contact-us' },
-                { name: "Support", link: '/support' },
-                { name: "Help & FAQs", link: '/faq' },
-                { name: "Blog", link: '/blog' },
-                { name: "Cookie policy", link: '/cookie-policy' },
-            ]
-        },
-        {
-            title: "Contact",
-            links: [
-                { name: "support@nilaas.in", link: "mailto:support@nilaas.in" },
-                { name: "+91 95263 67551", link: "tel:+919526367551", isPhone: true },
-                { name: "WhatsApp us", link: "https://wa.me/919526367551" },
-            ]
+  const [footerSections, setFooterSections] = useState(DEFAULT_FOOTER_SECTIONS)
+
+  useEffect(() => {
+    const fetchFooterMenu = async () => {
+      try {
+        const settingsRes = await fetch('/api/store/settings', { cache: 'no-store' })
+        const settingsData = await settingsRes.json()
+        const remote = settingsData.settings?.footerSections
+        if (Array.isArray(remote) && remote.length > 0) {
+          setFooterSections(remote)
         }
-    ]);
+      } catch (error) {
+        console.error('Error fetching footer menu:', error)
+      }
+    }
 
-    useEffect(() => {
-        const fetchFooterMenu = async () => {
-            try {
-                const settingsRes = await fetch('/api/store/settings');
-                const settingsData = await settingsRes.json();
-                if (settingsData.settings?.footerSections) {
-                    setFooterSections(settingsData.settings.footerSections);
-                }
-            } catch (error) {
-                console.error('Error fetching footer menu:', error);
-            }
-        };
-        
-        fetchFooterMenu();
-    }, []);
+    fetchFooterMenu()
+  }, [])
 
-    const InstagramIcon = () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/><circle cx="16.5" cy="7.5" r="1" fill="currentColor"/></svg>)
-    const TwitterIcon = () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 5.92a8.62 8.62 0 0 1-2.49.68 4.34 4.34 0 0 0 1.9-2.4 8.67 8.67 0 0 1-2.75 1.05 4.33 4.33 0 0 0-7.37 3.95A12.3 12.3 0 0 1 2.4 4.62a4.33 4.33 0 0 0 1.34 5.77 4.3 4.3 0 0 1-1.96-.54v.05a4.33 4.33 0 0 0 3.47 4.24 4.34 4.34 0 0 1-1.95.07 4.33 4.33 0 0 0 4.04 3A8.68 8.68 0 0 1 2 19.54a12.24 12.24 0 0 0 6.63 1.94c7.96 0 12.3-6.59 12.3-12.3 0-.19 0-.37-.01-.56A8.8 8.8 0 0 0 23 6.67a8.62 8.62 0 0 1-2.49.68" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>)
-    const FacebookIcon = () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>)
-    const YoutubeIcon = () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="m9.75 15.02 5.75-3.27-5.75-3.27v6.54z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>)
-    const WhatsAppIcon = () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>)
-    const EmailIcon = () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="m22 6-10 7L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>)
-    const ChatIcon = () => (<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>)
+  const InstagramIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" />
+    </svg>
+  )
+  const FacebookIcon = () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
+    </svg>
+  )
+  const socialIcons = [
+    { icon: InstagramIcon, link: 'https://www.instagram.com/nilaas.in/', label: 'Instagram' },
+    { icon: FacebookIcon, link: 'https://www.facebook.com/people/Nilaas/61584111974438/', label: 'Facebook' },
+  ]
 
-    const socialIcons = [
-        { icon: InstagramIcon, link: "https://www.instagram.com/nilaas/" },
-        { icon: TwitterIcon, link: "https://twitter.com/nilaas" },
-        { icon: FacebookIcon, link: "https://www.facebook.com/profile.php?id=61584513867192" },
-        { icon: YoutubeIcon, link: "https://www.youtube.com/@nilaas" },
-    ];
+  const paymentIcons = ['Visa', 'Mastercard', 'UPI', 'Razorpay', 'Netbanking']
 
-    const paymentIcons = ['VISA', 'Mastercard', 'Maestro', 'PayPal', 'Diners Club', 'American Express'];
+  const visibleSections = (footerSections || []).filter(
+    (section) => section?.title && Array.isArray(section.links) && section.links.some((l) => l?.name)
+  )
 
-    return (
-        <footer className="bg-black text-white py-12 sm:py-16">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Main Footer Content */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 mb-12">
-                    {/* Brand Section */}
-                    <div>
-                        <Link href="/" className="inline-block mb-6">
-                            <Image
-                                src={Logo}
-                                alt="Nilaas"
-                                width={140}
-                                height={140}
-                                className="object-contain h-28 w-auto brightness-0 invert"
-                                priority
-                            />
-                        </Link>
-                    </div>
-
-                    {/* Dynamic Footer Sections */}
-                    {footerSections.map((section, index) => (
-                        <div key={index}>
-                            <h3 className="text-white font-semibold text-base mb-6">
-                                {section.title}
-                            </h3>
-                            <ul className="space-y-3">
-                                {section.links && section.links.map((link, i) => (
-                                    <li key={i}>
-                                        {link.isPhone ? (
-                                            <a 
-                                                href={link.link} 
-                                                className="text-sm text-white/80 hover:text-white transition inline-block"
-                                            >
-                                                {link.name}
-                                            </a>
-                                        ) : link.isChat ? (
-                                            <Link 
-                                                href={link.link} 
-                                                className="text-sm text-white/80 hover:text-white transition inline-flex items-center gap-2"
-                                            >
-                                                <ChatIcon />
-                                                {link.name}
-                                            </Link>
-                                        ) : (
-                                            <Link 
-                                                href={link.link} 
-                                                className="text-sm text-white/80 hover:text-white transition inline-block"
-                                            >
-                                                {link.name}
-                                            </Link>
-                                        )}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Divider */}
-                <div className="border-t border-white/20 mb-8"></div>
-
-                {/* Bottom Section */}
-                <div className="space-y-6">
-                    {/* Social Icons */}
-                    <div>
-                        <h4 className="text-white font-medium mb-4">Social</h4>
-                        <div className="flex items-center gap-4">
-                            {socialIcons.map((item, i) => (
-                                <Link 
-                                    href={item.link} 
-                                    key={i} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
-                                    className="text-white/70 hover:text-white transition"
-                                >
-                                    <item.icon />
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Payment Icons */}
-                    <div className="flex flex-wrap items-center gap-3">
-                        {paymentIcons.map((payment, i) => (
-                            <div 
-                                key={i} 
-                                className="bg-white/10 px-3 py-1.5 rounded text-xs text-white/80"
-                            >
-                                {payment}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Copyright */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-6 border-t border-white/20">
-                        <p className="text-sm text-white/70">
-                            © {new Date().getFullYear()} Nilaas. All Rights Reserved.
-                        </p>
-                        <div className="flex flex-wrap gap-4 sm:gap-6">
-                            <Link href="/terms" className="text-sm text-white/70 hover:text-white transition">
-                                Terms & Conditions
-                            </Link>
-                            <Link href="/privacy" className="text-sm text-white/70 hover:text-white transition">
-                                Privacy Policy
-                            </Link>
-                            <Link href="/disclaimer" className="text-sm text-white/70 hover:text-white transition">
-                                Disclaimer
-                            </Link>
-                            <Link href="/shipping-policy" className="text-sm text-white/70 hover:text-white transition">
-                                Shipping
-                            </Link>
-                            <Link href="/return-policy" className="text-sm text-white/70 hover:text-white transition">
-                                Returns
-                            </Link>
-                        </div>
-                    </div>
-                </div>
+  return (
+    <footer className="bg-[#1a0f0d] text-[#f5ebe4]">
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-14 sm:pt-16 pb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-10 mb-12">
+          {/* Brand */}
+          <div className="col-span-2 sm:col-span-3 lg:col-span-2">
+            <Link href="/" className="inline-block mb-5">
+              <Image
+                src={Logo}
+                alt={SITE.name}
+                width={120}
+                height={120}
+                className="object-contain h-16 w-auto brightness-0 invert opacity-95"
+                priority
+              />
+            </Link>
+            <p className="text-sm text-[#c9a99a] leading-relaxed max-w-xs mb-5">
+              {SITE.tagline}. Everyday ethnic wear, ready for every occasion.
+            </p>
+            <div className="space-y-2 text-sm text-[#d4c4bb]">
+              <a href={`mailto:${SITE.email}`} className="block hover:text-white transition">
+                {SITE.email}
+              </a>
+              <a href={`tel:${SITE.phoneTel}`} className="block hover:text-white transition">
+                {SITE.phone}
+              </a>
+              <a
+                href={`https://wa.me/${SITE.whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-[#f5ebe4] border-b border-[#f5ebe4]/40 pb-0.5 hover:border-[#f5ebe4] transition"
+              >
+                WhatsApp us
+              </a>
             </div>
-        </footer>
-    );
-};
+          </div>
 
-export default Footer;
+          {/* Dynamic sections from dashboard */}
+          {visibleSections.map((section, index) => (
+            <div key={`${section.title}-${index}`}>
+              <h3 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#c9a99a] mb-4">
+                {section.title}
+              </h3>
+              <ul className="space-y-2.5">
+                {section.links
+                  .filter((link) => link?.name)
+                  .map((link, i) => (
+                    <li key={`${link.name}-${i}`}>
+                      {String(link.link || '').startsWith('http') ||
+                      String(link.link || '').startsWith('mailto:') ||
+                      String(link.link || '').startsWith('tel:') ? (
+                        <a
+                          href={link.link}
+                          target={String(link.link).startsWith('http') ? '_blank' : undefined}
+                          rel={String(link.link).startsWith('http') ? 'noopener noreferrer' : undefined}
+                          className="text-sm text-[#e8ddd4]/85 hover:text-white transition"
+                        >
+                          {link.name}
+                        </a>
+                      ) : (
+                        <Link
+                          href={link.link || '#'}
+                          className="text-sm text-[#e8ddd4]/85 hover:text-white transition"
+                        >
+                          {link.name}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t border-white/10 pt-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[#c9a99a] mb-3">Follow us</p>
+              <div className="flex items-center gap-3">
+                {socialIcons.map((item) => (
+                  <Link
+                    href={item.link}
+                    key={item.label}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={item.label}
+                    className="h-10 w-10 flex items-center justify-center border border-white/15 text-[#e8ddd4] hover:bg-white/10 hover:text-white transition"
+                  >
+                    <item.icon />
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[#c9a99a] mb-3">We accept</p>
+              <div className="flex flex-wrap items-center gap-2">
+                {paymentIcons.map((payment) => (
+                  <span
+                    key={payment}
+                    className="border border-white/15 px-2.5 py-1 text-[11px] tracking-wide text-[#d4c4bb]"
+                  >
+                    {payment}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-6 border-t border-white/10">
+            <p className="text-sm text-[#9a7d72]">
+              © {new Date().getFullYear()} {SITE.name}. All rights reserved.
+            </p>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              <Link href="/terms" className="text-sm text-[#9a7d72] hover:text-white transition">
+                Terms
+              </Link>
+              <Link href="/privacy" className="text-sm text-[#9a7d72] hover:text-white transition">
+                Privacy
+              </Link>
+              <Link href="/shipping-policy" className="text-sm text-[#9a7d72] hover:text-white transition">
+                Shipping
+              </Link>
+              <Link href="/return-policy" className="text-sm text-[#9a7d72] hover:text-white transition">
+                Returns
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  )
+}
+
+export default Footer

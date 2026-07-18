@@ -1,171 +1,257 @@
-import { connectToDatabase } from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { connectToDatabase } from '@/lib/mongodb'
+import { ObjectId } from 'mongodb'
 
-// In-memory storage as fallback (persists for session)
-let cachedBanners = [];
+let cachedBanners = []
 
-console.log('✓ Hero banners API loaded - cache initialized');
+function toId(value) {
+  if (!value) return null
+  if (typeof value === 'object' && value.$oid) return String(value.$oid)
+  return String(value)
+}
 
-// GET - Fetch all banners
-export async function GET(req) {
+function sanitizeBannerInput(body = {}, { partial = false } = {}) {
+  const out = {}
+
+  const assignString = (key) => {
+    if (body[key] === undefined) return
+    out[key] = String(body[key] ?? '').trim()
+  }
+
+  assignString('badge')
+  assignString('subtitle')
+  assignString('title')
+  assignString('description')
+  assignString('cta')
+  assignString('link')
+  assignString('image')
+  assignString('mobileImage')
+
+  if (body.order !== undefined) out.order = Number(body.order) || 0
+  if (body.isActive !== undefined) out.isActive = Boolean(body.isActive)
+  if (body.showTitle !== undefined) out.showTitle = Boolean(body.showTitle)
+  if (body.showSubtitle !== undefined) out.showSubtitle = Boolean(body.showSubtitle)
+  if (body.showBadge !== undefined) out.showBadge = Boolean(body.showBadge)
+  if (body.showButton !== undefined) out.showButton = Boolean(body.showButton)
+
+  // Show flags follow whether the matching text field has content
+  if (out.title !== undefined) out.showTitle = Boolean(out.title)
+  if (out.subtitle !== undefined) out.showSubtitle = Boolean(out.subtitle)
+  if (out.badge !== undefined) out.showBadge = Boolean(out.badge)
+  if (out.cta !== undefined) out.showButton = Boolean(out.cta)
+
+  if (!partial) {
+    out.badge = out.badge || ''
+    out.subtitle = out.subtitle || ''
+    out.title = out.title || ''
+    out.description = out.description || ''
+    out.cta = out.cta || ''
+    out.link = out.link || '/shop'
+    out.image = out.image || ''
+    out.mobileImage = out.mobileImage || ''
+    out.order = out.order || 0
+    out.isActive = out.isActive !== undefined ? out.isActive : true
+    out.showTitle = Boolean(out.title)
+    out.showSubtitle = Boolean(out.subtitle)
+    out.showBadge = Boolean(out.badge)
+    out.showButton = Boolean(out.cta)
+  }
+
+  return out
+}
+
+function upsertCache(banner) {
+  const id = toId(banner._id)
+  const idx = cachedBanners.findIndex((b) => toId(b._id) === id)
+  if (idx >= 0) cachedBanners[idx] = { ...cachedBanners[idx], ...banner }
+  else cachedBanners.push(banner)
+}
+
+function removeFromCache(bannerId) {
+  const id = toId(bannerId)
+  cachedBanners = cachedBanners.filter((b) => toId(b._id) !== id)
+}
+
+export async function GET() {
   try {
     try {
-      const { db } = await connectToDatabase();
-      const banners = await db.collection('storeBanners')
+      const { db } = await connectToDatabase()
+      const banners = await db
+        .collection('storeBanners')
         .find({})
         .sort({ order: 1, createdAt: -1 })
-        .toArray();
-      cachedBanners = banners; // Update cache from DB
-      console.log('✓ Fetched from MongoDB:', banners.length, 'banners');
-      return Response.json({ success: true, banners: banners || [] }, {
-        headers: {
-          'Cache-Control': 'no-store'
-        }
-      });
+        .toArray()
+      cachedBanners = banners
+      return Response.json(
+        { success: true, banners: banners || [] },
+        { headers: { 'Cache-Control': 'no-store' } }
+      )
     } catch (dbError) {
-      console.error('✗ MongoDB connection error:', dbError.message);
-      // Return cached banners if database fails
-      console.log('→ Returning from cache:', cachedBanners.length, 'banners');
-      return Response.json({ success: true, banners: cachedBanners }, {
-        headers: {
-          'Cache-Control': 'public, max-age=120, stale-while-revalidate=600'
+      console.error('MongoDB connection error:', dbError.message)
+      return Response.json(
+        { success: true, banners: cachedBanners },
+        {
+          headers: {
+            'Cache-Control': 'no-store',
+          },
         }
-      });
+      )
     }
   } catch (error) {
-    console.error('✗ Error in GET /api/store/hero-banners:', error);
+    console.error('Error in GET /api/store/hero-banners:', error)
     return Response.json({ success: true, banners: cachedBanners }, {
-      headers: {
-        'Cache-Control': 'public, max-age=120, stale-while-revalidate=600'
-      }
-    });
+      headers: { 'Cache-Control': 'no-store' },
+    })
   }
 }
 
-// POST - Create new banner
 export async function POST(req) {
   try {
-    const body = await req.json();
-    console.log('📝 Creating banner:', body.title);
-    
+    const body = await req.json()
+    const data = sanitizeBannerInput(body, { partial: false })
+
+    if (!data.image) {
+      return Response.json({ success: false, error: 'Banner image is required' }, { status: 400 })
+    }
+
     const banner = {
       _id: new ObjectId(),
-      badge: body.badge || '',
-      subtitle: body.subtitle || '',
-      title: body.title || '',
-      description: body.description || '',
-      cta: body.cta || 'SHOP NOW',
-      link: body.link || '/shop',
-      image: body.image || '',
-      mobileImage: body.mobileImage || '',
-      order: body.order || 0,
-      isActive: body.isActive !== undefined ? body.isActive : true,
-      showTitle: body.showTitle !== undefined ? body.showTitle : true,
-      showSubtitle: body.showSubtitle !== undefined ? body.showSubtitle : true,
-      showBadge: body.showBadge !== undefined ? body.showBadge : true,
-      showButton: body.showButton !== undefined ? body.showButton : true,
+      ...data,
       createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    // Add to cache immediately
-    cachedBanners.push(banner);
-    console.log('✓ Added to cache. Total banners:', cachedBanners.length);
-    
-    // Try to save to MongoDB
+      updatedAt: new Date(),
+    }
+
+    upsertCache(banner)
+
     try {
-      const { db } = await connectToDatabase();
-      await db.collection('storeBanners').insertOne(banner);
-      console.log('✓ Banner saved to MongoDB');
-      return Response.json({ 
-        success: true, 
+      const { db } = await connectToDatabase()
+      await db.collection('storeBanners').insertOne(banner)
+      return Response.json({
+        success: true,
         message: 'Banner created successfully',
-        banner: banner
-      });
+        banner,
+      })
     } catch (dbError) {
-      console.error('⚠ MongoDB save error (using cache):', dbError.message);
-      // Return success with warning - banner is in cache
-      return Response.json({ 
-        success: true, 
+      console.error('MongoDB save error (using cache):', dbError.message)
+      return Response.json({
+        success: true,
         message: 'Banner created (cached, pending database sync)',
         warning: 'Database temporarily unavailable - data will sync when connection is restored',
-        banner: banner
-      }, { status: 200 });
+        banner,
+      })
     }
   } catch (error) {
-    console.error('✗ Error creating banner:', error);
-    return Response.json({ success: false, error: error.message }, { status: 400 });
+    console.error('Error creating banner:', error)
+    return Response.json({ success: false, error: error.message }, { status: 400 })
   }
 }
 
-// PUT - Update banner
 export async function PUT(req) {
   try {
-    const body = await req.json();
-    const { bannerId, ...updates } = body;
+    const body = await req.json()
+    const bannerId = toId(body.bannerId || body._id)
 
     if (!bannerId) {
-      return Response.json({ success: false, error: 'Banner ID required' }, { status: 400 });
+      return Response.json({ success: false, error: 'Banner ID required' }, { status: 400 })
+    }
+
+    // Support both full edits and partial toggles (e.g. isActive only)
+    const isPartialToggle =
+      body.title === undefined &&
+      body.image === undefined &&
+      (body.isActive !== undefined ||
+        body.showTitle !== undefined ||
+        body.showSubtitle !== undefined ||
+        body.showBadge !== undefined ||
+        body.showButton !== undefined)
+
+    const updates = sanitizeBannerInput(body, { partial: true })
+    delete updates._id
+    delete updates.bannerId
+
+    if (!isPartialToggle && updates.image !== undefined && !updates.image) {
+      return Response.json({ success: false, error: 'Banner image is required' }, { status: 400 })
+    }
+
+    const updateData = {
+      ...updates,
+      updatedAt: new Date(),
     }
 
     try {
-      const { db } = await connectToDatabase();
-      
-      const updateData = {
-        ...updates,
-        updatedAt: new Date()
-      };
+      const { db } = await connectToDatabase()
+      let objectId
+      try {
+        objectId = new ObjectId(bannerId)
+      } catch {
+        return Response.json({ success: false, error: 'Invalid banner ID' }, { status: 400 })
+      }
 
-      await db.collection('storeBanners').updateOne(
-        { _id: new ObjectId(bannerId) },
+      const result = await db.collection('storeBanners').updateOne(
+        { _id: objectId },
         { $set: updateData }
-      );
+      )
 
-      return Response.json({ success: true, message: 'Banner updated successfully' });
+      if (result.matchedCount === 0) {
+        return Response.json({ success: false, error: 'Banner not found' }, { status: 404 })
+      }
+
+      const updated = await db.collection('storeBanners').findOne({ _id: objectId })
+      if (updated) upsertCache(updated)
+
+      return Response.json({
+        success: true,
+        message: 'Banner updated successfully',
+        banner: updated,
+      })
     } catch (dbError) {
-      console.error('MongoDB connection error in PUT:', dbError.message);
-      // Return success even if database fails
-      return Response.json({ 
-        success: true, 
-        message: 'Banner updated (pending database sync)',
-        warning: 'Database temporarily unavailable'
-      }, { status: 200 });
+      console.error('MongoDB connection error in PUT:', dbError.message)
+      const cached = cachedBanners.find((b) => toId(b._id) === bannerId)
+      if (cached) {
+        const merged = { ...cached, ...updateData }
+        upsertCache(merged)
+        return Response.json({
+          success: true,
+          message: 'Banner updated (cached, pending database sync)',
+          warning: 'Database temporarily unavailable',
+          banner: merged,
+        })
+      }
+      return Response.json(
+        { success: false, error: 'Database unavailable and banner not in cache' },
+        { status: 503 }
+      )
     }
   } catch (error) {
-    console.error('Error updating banner:', error);
-    return Response.json({ success: false, error: error.message }, { status: 400 });
+    console.error('Error updating banner:', error)
+    return Response.json({ success: false, error: error.message }, { status: 400 })
   }
 }
 
-// DELETE - Delete banner
 export async function DELETE(req) {
   try {
-    const { searchParams } = new URL(req.url);
-    const bannerId = searchParams.get('bannerId');
+    const { searchParams } = new URL(req.url)
+    const bannerId = toId(searchParams.get('bannerId'))
 
     if (!bannerId) {
-      return Response.json({ success: false, error: 'Banner ID required' }, { status: 400 });
+      return Response.json({ success: false, error: 'Banner ID required' }, { status: 400 })
     }
+
+    removeFromCache(bannerId)
 
     try {
-      const { db } = await connectToDatabase();
-
-      await db.collection('storeBanners').deleteOne({
-        _id: new ObjectId(bannerId)
-      });
-
-      return Response.json({ success: true, message: 'Banner deleted successfully' });
+      const { db } = await connectToDatabase()
+      await db.collection('storeBanners').deleteOne({ _id: new ObjectId(bannerId) })
+      return Response.json({ success: true, message: 'Banner deleted successfully' })
     } catch (dbError) {
-      console.error('MongoDB connection error in DELETE:', dbError.message);
-      // Return success even if database fails
-      return Response.json({ 
-        success: true, 
+      console.error('MongoDB connection error in DELETE:', dbError.message)
+      return Response.json({
+        success: true,
         message: 'Banner deleted (pending database sync)',
-        warning: 'Database temporarily unavailable'
-      }, { status: 200 });
+        warning: 'Database temporarily unavailable',
+      })
     }
   } catch (error) {
-    console.error('Error deleting banner:', error);
-    return Response.json({ success: false, error: error.message }, { status: 400 });
+    console.error('Error deleting banner:', error)
+    return Response.json({ success: false, error: error.message }, { status: 400 })
   }
 }
